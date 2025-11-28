@@ -145,6 +145,13 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
 
+  // --- Style State (using ValueNotifier for optimized rebuilds) ---
+  final ValueNotifier<double> _fontSizeNotifier = ValueNotifier<double>(18);
+  final ValueNotifier<double> _lineHeightNotifier = ValueNotifier<double>(1.8);
+  final ValueNotifier<String> _wordSpacingNotifier = ValueNotifier<String>('normal');
+  final ValueNotifier<String> _fontFamilyNotifier = ValueNotifier<String>('serif');
+  final ValueNotifier<String> _themeModeNotifier = ValueNotifier<String>('paper');
+
   // --- States ---
   late double _fontSize;
   double _lineHeight = 1.8;
@@ -187,7 +194,35 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     // The React code defaults to 'paper', so we'll stick to that unless user passed dark mode
     if (widget.darkMode) {
       _themeMode = 'dark';
+      _themeModeNotifier.value = 'dark';
     }
+
+    // Sync initial values to notifiers
+    _fontSizeNotifier.value = _fontSize;
+    _lineHeightNotifier.value = _lineHeight;
+    _wordSpacingNotifier.value = _wordSpacing;
+    _fontFamilyNotifier.value = _fontFamily;
+
+    // Preload all fonts immediately for instant switching
+    _preloadFonts();
+  }
+
+  /// Preload all fonts to ensure instant switching
+  void _preloadFonts() {
+    // Trigger font loading by creating TextStyles
+    // Playfair Display (serif)
+    GoogleFonts.playfairDisplay(fontSize: 18);
+    GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.bold);
+    
+    // Manrope (sans)
+    GoogleFonts.manrope(fontSize: 18);
+    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold);
+    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w500);
+    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w600);
+    
+    // JetBrains Mono (mono)
+    GoogleFonts.jetBrainsMono(fontSize: 18);
+    GoogleFonts.jetBrainsMono(fontSize: 18, fontWeight: FontWeight.bold);
   }
 
   @override
@@ -206,6 +241,11 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
     _searchController.dispose();
+    _fontSizeNotifier.dispose();
+    _lineHeightNotifier.dispose();
+    _wordSpacingNotifier.dispose();
+    _fontFamilyNotifier.dispose();
+    _themeModeNotifier.dispose();
     super.dispose();
   }
 
@@ -279,6 +319,80 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   int _countWords(String text) {
     if (text.trim().isEmpty) return 0;
     return text.trim().split(RegExp(r'\s+')).length;
+  }
+
+  /// Builds the reactive HTML content with a single ValueListenableBuilder
+  /// that listens to all style notifiers. This ensures instant visual updates
+  /// without full page reloads or scroll position resets.
+  Widget _buildReactiveHtmlContent() {
+    // Combine all style notifiers into a single listener
+    // This ensures the HtmlWidget rebuilds only when styles change,
+    // not when the chapter changes (which is handled by the stable key)
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        _fontSizeNotifier,
+        _lineHeightNotifier,
+        _wordSpacingNotifier,
+        _fontFamilyNotifier,
+        _themeModeNotifier,
+      ]),
+      builder: (context, _) {
+        // Get current values from notifiers
+        final fontSize = _fontSizeNotifier.value;
+        final lineHeight = _lineHeightNotifier.value;
+        final wordSpacing = _wordSpacingNotifier.value;
+        final fontFamily = _fontFamilyNotifier.value;
+        final themeMode = _themeModeNotifier.value;
+        
+        final currentTheme = ReaderTheme.getTheme(themeMode);
+        final wordSpacingValue = wordSpacing == 'wide' ? 2.0 : (wordSpacing == 'wider' ? 5.0 : 0.0);
+        
+        // Create textStyle with current settings - passed DIRECTLY to HtmlWidget
+        final textStyle = _getPreloadedTextStyle(
+          fontSize: fontSize,
+          height: lineHeight,
+          wordSpacing: wordSpacingValue,
+          color: currentTheme.text,
+          fontFamily: fontFamily,
+        );
+        
+        // HtmlWidget with STABLE key (based on chapterIndex only)
+        // This ensures scroll position is preserved when styles change
+        return HtmlWidget(
+          _renderedChapter!.html, // Cached HTML string - NOT re-parsed
+          // CRITICAL: Stable key based ONLY on chapterIndex
+          // Do NOT include styling properties in the key
+          key: ValueKey('chapter_html_$_currentChapterIndex'),
+          renderMode: RenderMode.column,
+          // Direct textStyle injection - fontSize, fontFamily, etc. all included
+          // This triggers a repaint, not a full re-render
+          textStyle: textStyle,
+          // NO rebuildTriggers - we rely on the textStyle prop changes
+          // The widget will repaint when textStyle changes, but won't re-parse HTML
+          // Disable unnecessary features to improve performance
+          onTapUrl: null,
+          onTapImage: null,
+          customStylesBuilder: (element) {
+            final styles = <String, String>{};
+
+            // Apply word-spacing if needed
+            if (wordSpacingValue > 0) {
+              styles['word-spacing'] = '${wordSpacingValue}px';
+            }
+
+            // Paragraph specific styles
+            if (element.localName == 'p') {
+              styles['margin'] = '0 0 1.5em 0';
+              styles['text-align'] = 'justify';
+            } else {
+              styles['text-align'] = 'justify';
+            }
+
+            return styles;
+          },
+        );
+      },
+    );
   }
 
   void _handleContentClick() {
@@ -575,14 +689,56 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     }
   }
 
-  String get _fontFamilyName {
-    switch (_fontFamily) {
+  String _getFontFamilyName(String fontFamily) {
+    switch (fontFamily) {
       case 'sans':
-        return 'Manrope'; // Assuming Manrope is the sans font in the app
+        return 'Manrope';
       case 'mono':
-        return 'JetBrains Mono'; // Or any mono font available
+        return 'JetBrains Mono';
       default:
-        return 'Playfair Display'; // Assuming Playfair is the serif font
+        return 'Playfair Display';
+    }
+  }
+
+  /// Get preloaded TextStyle for current font family
+  TextStyle _getPreloadedTextStyle({
+    double? fontSize,
+    double? height,
+    double? wordSpacing,
+    Color? color,
+    FontWeight? fontWeight,
+    String? fontFamily,
+  }) {
+    final size = fontSize ?? _fontSize;
+    final lineHeight = height ?? _lineHeight;
+    final spacing = wordSpacing ?? _getWordSpacingValue();
+    final family = fontFamily ?? _fontFamily;
+    
+    switch (family) {
+      case 'sans':
+        return GoogleFonts.manrope(
+          fontSize: size,
+          height: lineHeight,
+          wordSpacing: spacing,
+          color: color,
+          fontWeight: fontWeight,
+        );
+      case 'mono':
+        return GoogleFonts.jetBrainsMono(
+          fontSize: size,
+          height: lineHeight,
+          wordSpacing: spacing,
+          color: color,
+          fontWeight: fontWeight,
+        );
+      default:
+        return GoogleFonts.playfairDisplay(
+          fontSize: size,
+          height: lineHeight,
+          wordSpacing: spacing,
+          color: color,
+          fontWeight: fontWeight,
+        );
     }
   }
 
@@ -594,11 +750,15 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
   @override
   Widget build(BuildContext context) {
-    final theme = _currentTheme;
-
-    return Scaffold(
-      backgroundColor: theme.bg,
-      body: Stack(
+    // Use ValueListenableBuilder for theme to prevent full rebuilds
+    return ValueListenableBuilder<String>(
+      valueListenable: _themeModeNotifier,
+      builder: (context, themeMode, _) {
+        final theme = ReaderTheme.getTheme(themeMode);
+        
+        return Scaffold(
+          backgroundColor: theme.bg,
+          body: Stack(
         children: [
           // Main Content
           GestureDetector(
@@ -621,44 +781,49 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       children: [
                         // Chapter Header (React: text-center mb-16 pt-10)
                         const SizedBox(height: 40),
-                        Center(
-                          child: Column(
-                            children: [
-                              Text(
-                                'CHƯƠNG ${_currentChapterIndex + 1}',
-                                style: GoogleFonts.getFont(
-                                  _fontFamily == 'mono'
-                                      ? 'JetBrains Mono'
-                                      : (_fontFamily == 'sans'
-                                            ? 'Manrope'
-                                            : 'Playfair Display'),
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 3, // tracking-[0.2em]
-                                  color: theme.textSecondary,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              if (_renderedChapter != null)
-                                Text(
-                                  _renderedChapter!.title,
-                                  textAlign: TextAlign.center,
-                                  style: GoogleFonts.getFont(
-                                    _fontFamilyName,
-                                    fontSize: 48, // text-5xl
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.2,
-                                    color: theme.text,
+                        ValueListenableBuilder<String>(
+                          valueListenable: _fontFamilyNotifier,
+                          builder: (context, fontFamily, _) {
+                            return Center(
+                              child: Column(
+                                children: [
+                                  Text(
+                                    'CHƯƠNG ${_currentChapterIndex + 1}',
+                                    style: GoogleFonts.getFont(
+                                      fontFamily == 'mono'
+                                          ? 'JetBrains Mono'
+                                          : (fontFamily == 'sans'
+                                                ? 'Manrope'
+                                                : 'Playfair Display'),
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 3, // tracking-[0.2em]
+                                      color: theme.textSecondary,
+                                    ),
                                   ),
-                                ),
-                              const SizedBox(height: 32),
-                              Container(
-                                width: 64,
-                                height: 1,
-                                color: theme.text.withValues(alpha: 0.2),
+                                  const SizedBox(height: 16),
+                                  if (_renderedChapter != null)
+                                    Text(
+                                      _renderedChapter!.title,
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.getFont(
+                                        _getFontFamilyName(fontFamily),
+                                        fontSize: 48, // text-5xl
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.2,
+                                        color: theme.text,
+                                      ),
+                                    ),
+                                  const SizedBox(height: 32),
+                                  Container(
+                                    width: 64,
+                                    height: 1,
+                                    color: theme.text.withValues(alpha: 0.2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                         const SizedBox(height: 32),
 
@@ -673,66 +838,23 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             child: Text(
                               'Không thể hiển thị nội dung.',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.getFont(
-                                _fontFamilyName,
+                              style: _getPreloadedTextStyle(
                                 fontSize: 16,
                                 color: theme.text,
                               ),
                             ),
                           )
                         else
-                          // Removed CompositedTransformTarget and LayerLink
+                          // Content is cached - only style rendering rebuilds
                           SelectionArea(
                             selectionControls: CustomTextSelectionControls(
                               onSelectionChanged: _handleTextSelection,
                               theme: theme,
                             ),
                             child: RepaintBoundary(
-                              child: HtmlWidget(
-                                _renderedChapter!.html,
-                                key: ValueKey('chapter_$_currentChapterIndex'),
-                                renderMode: RenderMode.column,
-                                textStyle: GoogleFonts.getFont(
-                                  _fontFamilyName,
-                                  fontSize: _fontSize,
-                                  height: _lineHeight,
-                                  wordSpacing: _getWordSpacingValue(),
-                                  color: theme.text,
-                                ),
-                                customStylesBuilder: (element) {
-                                  final styles = <String, String>{};
-
-                                  // Apply font-family to all text elements
-                                  if (element.localName == 'p' ||
-                                      element.localName == 'span' ||
-                                      element.localName == 'div' ||
-                                      element.localName == 'h1' ||
-                                      element.localName == 'h2' ||
-                                      element.localName == 'h3' ||
-                                      element.localName == 'h4' ||
-                                      element.localName == 'h5' ||
-                                      element.localName == 'h6') {
-                                    styles['font-family'] = _fontFamilyName;
-                                    styles['font-size'] = '${_fontSize}px';
-                                    styles['line-height'] = _lineHeight
-                                        .toString();
-                                    if (_getWordSpacingValue() > 0) {
-                                      styles['word-spacing'] =
-                                          '${_getWordSpacingValue()}px';
-                                    }
-                                  }
-
-                                  // Paragraph specific styles
-                                  if (element.localName == 'p') {
-                                    styles['margin'] = '0 0 1.5em 0';
-                                    styles['text-align'] = 'justify';
-                                  } else {
-                                    styles['text-align'] = 'justify';
-                                  }
-
-                                  return styles;
-                                },
-                              ),
+                              // Separate content key (stable) from style rendering
+                              key: ValueKey('chapter_content_$_currentChapterIndex'),
+                              child: _buildReactiveHtmlContent(),
                             ),
                           ),
 
@@ -777,6 +899,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           _buildBottomControls(theme),
         ],
       ),
+        );
+      },
     );
   }
 
@@ -1466,39 +1590,55 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       child: Row(
                         children: [
                           Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                if (_fontSize > 12) {
-                                  setState(() => _fontSize--);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                child: Icon(
-                                  LucideIcons.minus,
-                                  size: 16,
-                                  color: theme.text,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  if (_fontSize > 12) {
+                                    setState(() {
+                                      _fontSize--;
+                                      // Update immediately for instant feedback (button clicks are discrete)
+                                      _fontSizeNotifier.value = _fontSize;
+                                    });
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.minus,
+                                    size: 16,
+                                    color: theme.text,
+                                  ),
                                 ),
                               ),
                             ),
                           ),
                           Expanded(
-                            child: GestureDetector(
-                              onTap: () {
-                                if (_fontSize < 32) {
-                                  setState(() => _fontSize++);
-                                }
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 8,
-                                ),
-                                child: Icon(
-                                  LucideIcons.plus,
-                                  size: 16,
-                                  color: theme.text,
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  if (_fontSize < 32) {
+                                    setState(() {
+                                      _fontSize++;
+                                      // Update immediately for instant feedback (button clicks are discrete)
+                                      _fontSizeNotifier.value = _fontSize;
+                                    });
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(8),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  child: Icon(
+                                    LucideIcons.plus,
+                                    size: 16,
+                                    color: theme.text,
+                                  ),
                                 ),
                               ),
                             ),
@@ -1590,7 +1730,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final isSelected = _themeMode == mode;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _themeMode = mode),
+        onTap: () {
+          setState(() {
+            _themeMode = mode;
+            _themeModeNotifier.value = mode;
+          });
+        },
         child: Container(
           height: 48,
           decoration: BoxDecoration(
@@ -1619,32 +1764,41 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   Widget _buildFontButton(String font, String label, ReaderTheme theme) {
     final isSelected = _fontFamily == font;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _fontFamily = font),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.bg : Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.1),
-                      blurRadius: 4,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: GoogleFonts.getFont(
-                'Manrope',
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected
-                    ? theme.text
-                    : theme.text.withValues(alpha: 0.6),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            setState(() {
+              _fontFamily = font;
+              _fontFamilyNotifier.value = font;
+            });
+          },
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? theme.bg : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              boxShadow: isSelected
+                  ? [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 4,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Center(
+              child: Text(
+                label,
+                style: GoogleFonts.getFont(
+                  'Manrope',
+                  fontSize: 12,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? theme.text
+                      : theme.text.withValues(alpha: 0.6),
+                ),
               ),
             ),
           ),
@@ -1657,7 +1811,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final isSelected = _lineHeight == value;
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _lineHeight = value),
+        onTap: () {
+          setState(() {
+            _lineHeight = value;
+            _lineHeightNotifier.value = value;
+          });
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
@@ -1703,7 +1862,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
     return Expanded(
       child: GestureDetector(
-        onTap: () => setState(() => _wordSpacing = value),
+        onTap: () {
+          setState(() {
+            _wordSpacing = value;
+            _wordSpacingNotifier.value = value;
+          });
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(

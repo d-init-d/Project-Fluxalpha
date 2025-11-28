@@ -13,6 +13,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // DISABLE runtime fetching to prevent UI blocking network requests
+  // Fonts must be pre-bundled/cached - no network delays
   GoogleFonts.config.allowRuntimeFetching = false;
 
   // Migration: Clear old SharedPreferences data with heavy Base64 cover images
