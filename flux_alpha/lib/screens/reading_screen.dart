@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 
 /// Theme configuration for reading screen
@@ -240,13 +239,13 @@ class _ReadingScreenState extends State<ReadingScreen>
     TextStyle baseStyle;
     switch (fontFamily) {
       case FontType.sans:
-        baseStyle = GoogleFonts.notoSans();
+        baseStyle = const TextStyle(fontFamily: 'MySans');
         break;
       case FontType.mono:
-        baseStyle = GoogleFonts.jetBrainsMono();
+        baseStyle = const TextStyle(fontFamily: 'monospace');
         break;
       default:
-        baseStyle = GoogleFonts.merriweather();
+        baseStyle = const TextStyle(fontFamily: 'MySerif');
     }
     return baseStyle.copyWith(
       fontSize: fontSize,
@@ -343,7 +342,7 @@ class _ReadingScreenState extends State<ReadingScreen>
               const SizedBox(height: 40),
               Text(
                 'CHƯƠNG 1',
-                style: GoogleFonts.inter(
+                style: TextStyle(fontFamily: 'MySans',
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
@@ -353,7 +352,8 @@ class _ReadingScreenState extends State<ReadingScreen>
               const SizedBox(height: 16),
               Text(
                 'Khởi đầu',
-                style: GoogleFonts.playfairDisplay(
+                style: TextStyle(
+                  fontFamily: 'MySerif',
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                   color: currentTheme.text,
@@ -448,7 +448,8 @@ class _ReadingScreenState extends State<ReadingScreen>
                     children: [
                       Text(
                         'Mục lục',
-                        style: GoogleFonts.playfairDisplay(
+                        style: TextStyle(
+                          fontFamily: 'MySerif',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: currentTheme.text,
@@ -485,7 +486,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                               children: [
                                 Text(
                                   'CHƯƠNG $chapter',
-                                  style: GoogleFonts.inter(
+                                  style: TextStyle(fontFamily: 'MySans',
                                     fontSize: 10,
                                     letterSpacing: 1,
                                     color: currentTheme.textSecondary,
@@ -496,7 +497,8 @@ class _ReadingScreenState extends State<ReadingScreen>
                                   chapter == 1
                                       ? 'Khởi đầu'
                                       : 'Hành trình $chapter',
-                                  style: GoogleFonts.playfairDisplay(
+                                  style: TextStyle(
+                                    fontFamily: 'MySerif',
                                     fontSize: 16,
                                     fontWeight:
                                         isActive ? FontWeight.bold : FontWeight.normal,
@@ -563,7 +565,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                   children: [
                     Text(
                       'ĐANG ĐỌC',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(fontFamily: 'MySans',
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
@@ -573,7 +575,8 @@ class _ReadingScreenState extends State<ReadingScreen>
                     const SizedBox(height: 2),
                     Text(
                       'Nhà Giả Kim',
-                      style: GoogleFonts.playfairDisplay(
+                      style: TextStyle(
+                        fontFamily: 'MySerif',
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: currentTheme.text,
@@ -898,7 +901,7 @@ class _ReadingScreenState extends State<ReadingScreen>
   Widget _buildSectionLabel(String text) {
     return Text(
       text.toUpperCase(),
-      style: GoogleFonts.inter(
+      style: TextStyle(fontFamily: 'MySans',
         fontSize: 10,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
@@ -946,7 +949,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                 child: Center(
                   child: Text(
                     option.$2,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(fontFamily: 'MySans',
                       fontSize: 12,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1131,7 +1134,7 @@ class _ReadingScreenState extends State<ReadingScreen>
       children: [
         Text(
           '0%',
-          style: GoogleFonts.inter(
+          style: TextStyle(fontFamily: 'MySans',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: currentTheme.iconActive.withOpacity(0.7),
@@ -1214,7 +1217,7 @@ class _ReadingScreenState extends State<ReadingScreen>
         const SizedBox(width: 16),
         Text(
           '100%',
-          style: GoogleFonts.inter(
+          style: TextStyle(fontFamily: 'MySans',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: currentTheme.iconActive.withOpacity(0.7),
@@ -1242,7 +1245,8 @@ class _ReadingScreenState extends State<ReadingScreen>
             ),
             child: Text(
               'Aa',
-              style: GoogleFonts.playfairDisplay(
+              style: TextStyle(
+                fontFamily: 'MySerif',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: showAppearanceMenu
@@ -1259,7 +1263,7 @@ class _ReadingScreenState extends State<ReadingScreen>
           children: [
             Text(
               'CHƯƠNG 1/18',
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'MySans',
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
@@ -1269,7 +1273,7 @@ class _ReadingScreenState extends State<ReadingScreen>
             const SizedBox(height: 2),
             Text(
               'Còn khoảng 5 phút đọc',
-              style: GoogleFonts.inter(
+              style: TextStyle(fontFamily: 'MySans',
                 fontSize: 10,
                 color: currentTheme.textSecondary,
               ),

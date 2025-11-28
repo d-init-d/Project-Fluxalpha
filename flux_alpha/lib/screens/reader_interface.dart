@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
@@ -210,19 +209,13 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   /// Preload all fonts to ensure instant switching
   void _preloadFonts() {
     // Trigger font loading by creating TextStyles
-    // Playfair Display (serif)
-    GoogleFonts.playfairDisplay(fontSize: 18);
-    GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.bold);
+    // MySerif (Playfair Display)
+    const TextStyle(fontFamily: 'MySerif', fontSize: 18);
+    const TextStyle(fontFamily: 'MySerif', fontSize: 18, fontWeight: FontWeight.bold);
     
-    // Manrope (sans)
-    GoogleFonts.manrope(fontSize: 18);
-    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.bold);
-    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w500);
-    GoogleFonts.manrope(fontSize: 18, fontWeight: FontWeight.w600);
-    
-    // JetBrains Mono (mono)
-    GoogleFonts.jetBrainsMono(fontSize: 18);
-    GoogleFonts.jetBrainsMono(fontSize: 18, fontWeight: FontWeight.bold);
+    // MySans (Manrope)
+    const TextStyle(fontFamily: 'MySans', fontSize: 18);
+    const TextStyle(fontFamily: 'MySans', fontSize: 18, fontWeight: FontWeight.bold);
   }
 
   @override
@@ -656,8 +649,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                     const SizedBox(width: 8),
                     Text(
                       label,
-                      style: GoogleFonts.getFont(
-                        'Manrope',
+                      style: TextStyle(
+                        fontFamily: 'MySans',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: color,
@@ -692,11 +685,11 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   String _getFontFamilyName(String fontFamily) {
     switch (fontFamily) {
       case 'sans':
-        return 'Manrope';
+        return 'MySans';
       case 'mono':
-        return 'JetBrains Mono';
+        return 'monospace'; // Fallback to system monospace
       default:
-        return 'Playfair Display';
+        return 'MySerif';
     }
   }
 
@@ -716,7 +709,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     
     switch (family) {
       case 'sans':
-        return GoogleFonts.manrope(
+        return TextStyle(
+          fontFamily: 'MySans',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -724,7 +718,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           fontWeight: fontWeight,
         );
       case 'mono':
-        return GoogleFonts.jetBrainsMono(
+        // Fallback to system monospace if JetBrains Mono not available
+        return TextStyle(
+          fontFamily: 'monospace',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -732,7 +728,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           fontWeight: fontWeight,
         );
       default:
-        return GoogleFonts.playfairDisplay(
+        return TextStyle(
+          fontFamily: 'MySerif',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -789,12 +786,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                 children: [
                                   Text(
                                     'CHƯƠNG ${_currentChapterIndex + 1}',
-                                    style: GoogleFonts.getFont(
-                                      fontFamily == 'mono'
-                                          ? 'JetBrains Mono'
-                                          : (fontFamily == 'sans'
-                                                ? 'Manrope'
-                                                : 'Playfair Display'),
+                                    style: TextStyle(
+                                      fontFamily: _getFontFamilyName(fontFamily),
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 3, // tracking-[0.2em]
@@ -806,8 +799,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                     Text(
                                       _renderedChapter!.title,
                                       textAlign: TextAlign.center,
-                                      style: GoogleFonts.getFont(
-                                        _getFontFamilyName(fontFamily),
+                                      style: TextStyle(
+                                        fontFamily: _getFontFamilyName(fontFamily),
                                         fontSize: 48, // text-5xl
                                         fontWeight: FontWeight.bold,
                                         height: 1.2,
@@ -967,8 +960,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                         children: [
                           Text(
                             'Mục lục',
-                            style: GoogleFonts.getFont(
-                              'Playfair Display',
+                            style: TextStyle(
+                              fontFamily: 'MySerif',
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: theme.text,
@@ -1024,8 +1017,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                 children: [
                                   Text(
                                     'CHƯƠNG ${index + 1}',
-                                    style: GoogleFonts.getFont(
-                                      'Manrope',
+                                    style: TextStyle(
+                                      fontFamily: 'MySans',
                                       fontSize: 10,
                                       color: theme.textSecondary,
                                     ),
@@ -1033,8 +1026,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                   const SizedBox(height: 4),
                                   Text(
                                     title,
-                                    style: GoogleFonts.getFont(
-                                      'Playfair Display',
+                                    style: TextStyle(
+                                      fontFamily: 'MySerif',
                                       fontSize: 16,
                                       fontWeight: isActive
                                           ? FontWeight.bold
@@ -1114,8 +1107,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                     children: [
                       Text(
                         'ĐANG ĐỌC',
-                        style: GoogleFonts.getFont(
-                          'Manrope',
+                        style: TextStyle(
+                          fontFamily: 'MySans',
                           fontSize: 10,
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,
@@ -1126,8 +1119,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                         widget.book?['title'] ?? 'Nhà Giả Kim',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.getFont(
-                          'Playfair Display',
+                        style: TextStyle(
+                          fontFamily: 'MySerif',
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: theme.text,
@@ -1195,8 +1188,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 child: TextField(
                   controller: _searchController,
                   autofocus: _showSearch,
-                  style: GoogleFonts.getFont(
-                    'Manrope',
+                  style: TextStyle(
+                    fontFamily: 'MySans',
                     fontSize: 16,
                     color: theme.text,
                   ),
@@ -1216,8 +1209,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 },
                 child: Text(
                   'Hủy',
-                  style: GoogleFonts.getFont(
-                    'Manrope',
+                  style: TextStyle(
+                    fontFamily: 'MySans',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF3B82F6),
@@ -1256,8 +1249,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 const SizedBox(width: 8),
                 Text(
                   'Chương trước',
-                  style: GoogleFonts.getFont(
-                    'Manrope',
+                  style: TextStyle(
+                    fontFamily: 'MySans',
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: theme.text,
@@ -1290,8 +1283,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 children: [
                   Text(
                     'Chương tiếp theo',
-                    style: GoogleFonts.getFont(
-                      'Manrope',
+                    style: TextStyle(
+                      fontFamily: 'MySans',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: theme.buttonText,
@@ -1377,8 +1370,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             ),
                             child: Text(
                               'Aa',
-                              style: GoogleFonts.getFont(
-                                'Playfair Display',
+                              style: TextStyle(
+                                fontFamily: 'MySerif',
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: _showAppearanceMenu
@@ -1394,8 +1387,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                           children: [
                             Text(
                               'CHƯƠNG ${_currentChapterIndex + 1}/${widget.chapters.isEmpty ? 18 : widget.chapters.length}',
-                              style: GoogleFonts.getFont(
-                                'Manrope',
+                              style: TextStyle(
+                                fontFamily: 'MySans',
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1,
@@ -1405,8 +1398,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             const SizedBox(height: 2),
                             Text(
                               'Còn khoảng $_estimatedMinutes phút đọc',
-                              style: GoogleFonts.getFont(
-                                'Manrope',
+                              style: TextStyle(
+                                fontFamily: 'MySans',
                                 fontSize: 10,
                                 color: theme.textSecondary,
                               ),
@@ -1448,8 +1441,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
       children: [
         Text(
           '0%',
-          style: GoogleFonts.getFont(
-            'Manrope',
+          style: TextStyle(
+            fontFamily: 'MySans',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: theme.iconActive.withValues(alpha: 0.7),
@@ -1506,8 +1499,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         const SizedBox(width: 16),
         Text(
           '100%',
-          style: GoogleFonts.getFont(
-            'Manrope',
+          style: TextStyle(
+            fontFamily: 'MySans',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: theme.iconActive.withValues(alpha: 0.7),
@@ -1716,8 +1709,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   Widget _buildSectionLabel(String text, ReaderTheme theme) {
     return Text(
       text,
-      style: GoogleFonts.getFont(
-        'Manrope',
+      style: TextStyle(
+        fontFamily: 'MySans',
         fontSize: 10,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
@@ -1791,8 +1784,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             child: Center(
               child: Text(
                 label,
-                style: GoogleFonts.getFont(
-                  'Manrope',
+                style: TextStyle(
+                  fontFamily: 'MySans',
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected
@@ -2096,8 +2089,8 @@ class _NoteDialogState extends State<_NoteDialog> {
               children: [
                 Text(
                   'Ghi chú',
-                  style: GoogleFonts.getFont(
-                    'Playfair Display',
+                  style: TextStyle(
+                    fontFamily: 'MySerif',
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: widget.theme.text,
@@ -2119,8 +2112,8 @@ class _NoteDialogState extends State<_NoteDialog> {
               ),
               child: Text(
                 '"${widget.selectedText}"',
-                style: GoogleFonts.getFont(
-                  'Manrope',
+                style: TextStyle(
+                  fontFamily: 'MySans',
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
                   color: widget.theme.textSecondary,
@@ -2133,8 +2126,8 @@ class _NoteDialogState extends State<_NoteDialog> {
               controller: _noteController,
               autofocus: true,
               maxLines: 5,
-              style: GoogleFonts.getFont(
-                'Manrope',
+              style: TextStyle(
+                fontFamily: 'MySans',
                 fontSize: 16,
                 color: widget.theme.text,
               ),
@@ -2170,8 +2163,8 @@ class _NoteDialogState extends State<_NoteDialog> {
                   onPressed: () => Navigator.of(context).pop(),
                   child: Text(
                     'Hủy',
-                    style: GoogleFonts.getFont(
-                      'Manrope',
+                    style: TextStyle(
+                      fontFamily: 'MySans',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: widget.theme.textSecondary,
@@ -2200,8 +2193,8 @@ class _NoteDialogState extends State<_NoteDialog> {
                   ),
                   child: Text(
                     'Lưu',
-                    style: GoogleFonts.getFont(
-                      'Manrope',
+                    style: TextStyle(
+                      fontFamily: 'MySans',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
