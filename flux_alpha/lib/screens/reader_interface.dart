@@ -150,6 +150,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   final ValueNotifier<String> _wordSpacingNotifier = ValueNotifier<String>('normal');
   final ValueNotifier<String> _fontFamilyNotifier = ValueNotifier<String>('serif');
   final ValueNotifier<String> _themeModeNotifier = ValueNotifier<String>('paper');
+  final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0);
 
   // --- States ---
   late double _fontSize;
@@ -239,6 +240,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     _wordSpacingNotifier.dispose();
     _fontFamilyNotifier.dispose();
     _themeModeNotifier.dispose();
+    _progressNotifier.dispose();
     super.dispose();
   }
 
@@ -251,9 +253,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(0);
     }
-    setState(() {
-      _progress = 0;
-    });
+    _progress = 0;
+    _progressNotifier.value = 0;
   }
 
   void _onScroll() {
@@ -263,13 +264,17 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final current = _scrollController.position.pixels;
 
     if (maxScroll <= 0) {
-      setState(() => _progress = 0);
+      _progress = 0;
+      _progressNotifier.value = 0;
       return;
     }
 
-    setState(() {
-      _progress = (current / maxScroll) * 100;
-    });
+    final newProgress = (current / maxScroll) * 100;
+    // Only update if change is significant (reduces rebuilds)
+    if ((_progress - newProgress).abs() > 0.5) {
+      _progress = newProgress;
+      _progressNotifier.value = newProgress;
+    }
   }
 
   _RenderedChapter? _prepareChapter() {
@@ -280,9 +285,11 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final document = html_parser.parse(chapter.content);
     final body = document.body;
     if (body == null) {
+      final paragraphs = _splitIntoParagraphs('<p>${chapter.content}</p>');
       return _RenderedChapter(
         title: chapter.title,
         html: '<p>${chapter.content}</p>',
+        paragraphs: paragraphs,
         wordCount: _countWords(chapter.content),
       );
     }
@@ -302,11 +309,86 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final plainText = body.text.replaceAll(RegExp(r'\s+'), ' ').trim();
     final wordCount = _countWords(plainText);
 
+    // Split HTML into paragraphs for virtualization
+    final paragraphs = _splitIntoParagraphs(processedHtml);
+
     return _RenderedChapter(
       title: chapter.title,
       html: processedHtml,
+      paragraphs: paragraphs,
       wordCount: wordCount,
     );
+  }
+
+  /// Splits HTML content into individual paragraphs for lazy rendering
+  List<String> _splitIntoParagraphs(String html) {
+    if (html.trim().isEmpty) return ['<p></p>'];
+    
+    final document = html_parser.parse(html);
+    final body = document.body;
+    if (body == null) return [html];
+    
+    final paragraphs = <String>[];
+    
+    // Extract all paragraph elements and other block-level elements
+    final elements = body.children;
+    
+    for (final element in elements) {
+      final tagName = element.localName?.toLowerCase() ?? '';
+      
+      // Handle paragraph tags
+      if (tagName == 'p') {
+        final paragraphHtml = element.outerHtml;
+        if (paragraphHtml.trim().isNotEmpty) {
+          paragraphs.add(paragraphHtml);
+        }
+      }
+      // Handle other block-level elements (div, h1-h6, etc.)
+      else if (['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'].contains(tagName)) {
+        final elementHtml = element.outerHtml;
+        if (elementHtml.trim().isNotEmpty) {
+          paragraphs.add(elementHtml);
+        }
+      }
+      // For other elements, wrap them in a paragraph
+      else if (element.text.trim().isNotEmpty) {
+        paragraphs.add('<p>${element.outerHtml}</p>');
+      }
+    }
+    
+    // If no paragraphs found, split by newlines or create a single paragraph
+    if (paragraphs.isEmpty) {
+      // Fallback: try splitting by <p> tags using regex
+      final pMatches = RegExp(r'<p[^>]*>.*?</p>', dotAll: true).allMatches(html);
+      if (pMatches.isNotEmpty) {
+        for (final match in pMatches) {
+          final paragraph = match.group(0) ?? '';
+          if (paragraph.trim().isNotEmpty) {
+            paragraphs.add(paragraph);
+          }
+        }
+      } else {
+        // Last resort: split by double newlines or create single paragraph
+        final lines = html.split(RegExp(r'\n\s*\n'));
+        if (lines.length > 1) {
+          for (final line in lines) {
+            final trimmed = line.trim();
+            if (trimmed.isNotEmpty) {
+              paragraphs.add('<p>$trimmed</p>');
+            }
+          }
+        } else {
+          paragraphs.add(html);
+        }
+      }
+    }
+    
+    // Ensure at least one paragraph
+    if (paragraphs.isEmpty) {
+      paragraphs.add('<p></p>');
+    }
+    
+    return paragraphs;
   }
 
   int _countWords(String text) {
@@ -314,13 +396,14 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     return text.trim().split(RegExp(r'\s+')).length;
   }
 
-  /// Builds the reactive HTML content with a single ValueListenableBuilder
-  /// that listens to all style notifiers. This ensures instant visual updates
-  /// without full page reloads or scroll position resets.
-  Widget _buildReactiveHtmlContent() {
-    // Combine all style notifiers into a single listener
-    // This ensures the HtmlWidget rebuilds only when styles change,
-    // not when the chapter changes (which is handled by the stable key)
+  /// Builds a SliverList for paragraph-based virtualization
+  /// This ensures only visible paragraphs are rendered, making style changes instant (60FPS)
+  Widget _buildVirtualizedParagraphs() {
+    if (_renderedChapter == null || _renderedChapter!.paragraphs.isEmpty) {
+      return const SliverToBoxAdapter(child: SizedBox.shrink());
+    }
+
+    // Use SliverList for lazy rendering - only visible paragraphs are built
     return ListenableBuilder(
       listenable: Listenable.merge([
         _fontSizeNotifier,
@@ -340,7 +423,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         final currentTheme = ReaderTheme.getTheme(themeMode);
         final wordSpacingValue = wordSpacing == 'wide' ? 2.0 : (wordSpacing == 'wider' ? 5.0 : 0.0);
         
-        // Create textStyle with current settings - passed DIRECTLY to HtmlWidget
+        // Create textStyle with current settings
         final textStyle = _getPreloadedTextStyle(
           fontSize: fontSize,
           height: lineHeight,
@@ -349,40 +432,78 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           fontFamily: fontFamily,
         );
         
-        // HtmlWidget with STABLE key (based on chapterIndex only)
-        // This ensures scroll position is preserved when styles change
-        return HtmlWidget(
-          _renderedChapter!.html, // Cached HTML string - NOT re-parsed
-          // CRITICAL: Stable key based ONLY on chapterIndex
-          // Do NOT include styling properties in the key
-          key: ValueKey('chapter_html_$_currentChapterIndex'),
-          renderMode: RenderMode.column,
-          // Direct textStyle injection - fontSize, fontFamily, etc. all included
-          // This triggers a repaint, not a full re-render
-          textStyle: textStyle,
-          // NO rebuildTriggers - we rely on the textStyle prop changes
-          // The widget will repaint when textStyle changes, but won't re-parse HTML
-          // Disable unnecessary features to improve performance
-          onTapUrl: null,
-          onTapImage: null,
-          customStylesBuilder: (element) {
-            final styles = <String, String>{};
+        // Get the actual font family name for customStylesBuilder
+        final fontFamilyName = _getFontFamilyName(fontFamily);
+        
+        // SliverList with virtualization - only renders visible items
+        return SliverList(
+          // CRITICAL: Disable automatic keep-alives to prevent memory bloat
+          delegate: SliverChildBuilderDelegate(
+            // Item builder - renders only the visible paragraph
+            (context, index) {
+              final paragraphHtml = _renderedChapter!.paragraphs[index];
+              
+              // Wrap each paragraph in RepaintBoundary for isolated paint operations
+              // Center and constrain to maxWidth for proper layout
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 720),
+                  child: RepaintBoundary(
+                    key: ValueKey('paragraph_${_currentChapterIndex}_$index'),
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 24.0), // Paragraph spacing
+                      child: HtmlWidget(
+                        paragraphHtml,
+                        // Stable key per paragraph
+                        key: ValueKey('para_${_currentChapterIndex}_$index'),
+                        renderMode: RenderMode.column,
+                        // Direct textStyle injection for instant updates
+                        textStyle: textStyle,
+                        // Rebuild triggers for style changes
+                        rebuildTriggers: [fontSize, lineHeight, wordSpacingValue, fontFamily, themeMode],
+                        // Disable unnecessary features
+                        onTapUrl: null,
+                        onTapImage: null,
+                        customStylesBuilder: (element) {
+                          final styles = <String, String>{};
 
-            // Apply word-spacing if needed
-            if (wordSpacingValue > 0) {
-              styles['word-spacing'] = '${wordSpacingValue}px';
-            }
+                          // Apply font-family directly in CSS
+                          styles['font-family'] = fontFamilyName;
+                          
+                          // Apply word-spacing if needed
+                          if (wordSpacingValue > 0) {
+                            styles['word-spacing'] = '${wordSpacingValue}px';
+                          }
+                          
+                          // Apply line-height directly in CSS
+                          styles['line-height'] = '${lineHeight}';
+                          
+                          // Apply font-size directly in CSS for immediate updates
+                          styles['font-size'] = '${fontSize}px';
 
-            // Paragraph specific styles
-            if (element.localName == 'p') {
-              styles['margin'] = '0 0 1.5em 0';
-              styles['text-align'] = 'justify';
-            } else {
-              styles['text-align'] = 'justify';
-            }
+                          // Paragraph specific styles
+                          if (element.localName == 'p') {
+                            styles['margin'] = '0';
+                            styles['text-align'] = 'justify';
+                          } else {
+                            styles['text-align'] = 'justify';
+                          }
 
-            return styles;
-          },
+                          return styles;
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+            // Item count is the number of paragraphs
+            childCount: _renderedChapter!.paragraphs.length,
+            // CRITICAL: Disable automatic keep-alives to prevent memory bloat
+            addAutomaticKeepAlives: false,
+            // Disable repaint boundaries at delegate level (we add them per item)
+            addRepaintBoundaries: false,
+          ),
         );
       },
     );
@@ -664,7 +785,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   }
 
   void _handleSliderChange(double value) {
-    setState(() => _progress = value);
+    _progress = value;
+    _progressNotifier.value = value;
     if (_scrollController.hasClients) {
       final maxScroll = _scrollController.position.maxScrollExtent;
       _scrollController.jumpTo(maxScroll * (value / 100));
@@ -762,108 +884,137 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             onTap: _handleContentClick,
             child: Container(
               color: theme.bg,
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 80,
+              child: SelectionArea(
+                selectionControls: CustomTextSelectionControls(
+                  onSelectionChanged: _handleTextSelection,
+                  theme: theme,
                 ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxWidth: 720,
-                    ), // max-w-2xl
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Chapter Header (React: text-center mb-16 pt-10)
-                        const SizedBox(height: 40),
-                        ValueListenableBuilder<String>(
-                          valueListenable: _fontFamilyNotifier,
-                          builder: (context, fontFamily, _) {
-                            return Center(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    'CHƯƠNG ${_currentChapterIndex + 1}',
-                                    style: TextStyle(
-                                      fontFamily: _getFontFamilyName(fontFamily),
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 3, // tracking-[0.2em]
-                                      color: theme.textSecondary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  if (_renderedChapter != null)
-                                    Text(
-                                      _renderedChapter!.title,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontFamily: _getFontFamilyName(fontFamily),
-                                        fontSize: 48, // text-5xl
-                                        fontWeight: FontWeight.bold,
-                                        height: 1.2,
-                                        color: theme.text,
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  slivers: [
+                    // Padding and constraints wrapper
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 80,
+                      ),
+                      sliver: SliverToBoxAdapter(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                              maxWidth: 720,
+                            ), // max-w-2xl
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Chapter Header (React: text-center mb-16 pt-10)
+                                const SizedBox(height: 40),
+                                ValueListenableBuilder<String>(
+                                  valueListenable: _fontFamilyNotifier,
+                                  builder: (context, fontFamily, _) {
+                                    return Center(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            'CHƯƠNG ${_currentChapterIndex + 1}',
+                                            style: TextStyle(
+                                              fontFamily: _getFontFamilyName(fontFamily),
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              letterSpacing: 3, // tracking-[0.2em]
+                                              color: theme.textSecondary,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 16),
+                                          if (_renderedChapter != null)
+                                            Text(
+                                              _renderedChapter!.title,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontFamily: _getFontFamilyName(fontFamily),
+                                                fontSize: 48, // text-5xl
+                                                fontWeight: FontWeight.bold,
+                                                height: 1.2,
+                                                color: theme.text,
+                                              ),
+                                            ),
+                                          const SizedBox(height: 32),
+                                          Container(
+                                            width: 64,
+                                            height: 1,
+                                            color: theme.text.withValues(alpha: 0.2),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  const SizedBox(height: 32),
-                                  Container(
-                                    width: 64,
-                                    height: 1,
-                                    color: theme.text.withValues(alpha: 0.2),
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 32),
-
-                        // Content
-                        if (_renderedChapter == null)
-                          Container(
-                            padding: const EdgeInsets.all(24),
-                            decoration: BoxDecoration(
-                              color: theme.panelBg,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: Text(
-                              'Không thể hiển thị nội dung.',
-                              textAlign: TextAlign.center,
-                              style: _getPreloadedTextStyle(
-                                fontSize: 16,
-                                color: theme.text,
-                              ),
-                            ),
-                          )
-                        else
-                          // Content is cached - only style rendering rebuilds
-                          SelectionArea(
-                            selectionControls: CustomTextSelectionControls(
-                              onSelectionChanged: _handleTextSelection,
-                              theme: theme,
-                            ),
-                            child: RepaintBoundary(
-                              // Separate content key (stable) from style rendering
-                              key: ValueKey('chapter_content_$_currentChapterIndex'),
-                              child: _buildReactiveHtmlContent(),
+                                    );
+                                  },
+                                ),
+                                const SizedBox(height: 32),
+                              ],
                             ),
                           ),
-
-                        // Chapter Navigation Buttons
-                        const SizedBox(height: 48),
-                        Container(
-                          width: double.infinity,
-                          height: 1,
-                          color: theme.text.withValues(alpha: 0.15),
                         ),
-                        const SizedBox(height: 32),
-                        _buildChapterNavigationButtons(theme),
-                        const SizedBox(height: 180),
-                      ],
+                      ),
                     ),
-                  ),
+                    
+                    // Virtualized Content - SliverList for paragraph-based rendering
+                    if (_renderedChapter == null)
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        sliver: SliverToBoxAdapter(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              child: Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: theme.panelBg,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: Text(
+                                  'Không thể hiển thị nội dung.',
+                                  textAlign: TextAlign.center,
+                                  style: _getPreloadedTextStyle(
+                                    fontSize: 16,
+                                    color: theme.text,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 0),
+                        sliver: _buildVirtualizedParagraphs(),
+                      ),
+
+                    // Chapter Navigation Buttons
+                    SliverPadding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      sliver: SliverToBoxAdapter(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 720),
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 48),
+                                Container(
+                                  width: double.infinity,
+                                  height: 1,
+                                  color: theme.text.withValues(alpha: 0.15),
+                                ),
+                                const SizedBox(height: 32),
+                                _buildChapterNavigationButtons(theme),
+                                const SizedBox(height: 180),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1437,76 +1588,81 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   }
 
   Widget _buildProgressBar(ReaderTheme theme) {
-    return Row(
-      children: [
-        Text(
-          '0%',
-          style: TextStyle(
-            fontFamily: 'MySans',
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: theme.iconActive.withValues(alpha: 0.7),
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              // Track
-              Container(
-                height: 2,
-                decoration: BoxDecoration(
-                  color: theme.iconActive.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(1),
-                ),
+    return ValueListenableBuilder<double>(
+      valueListenable: _progressNotifier,
+      builder: (context, progress, _) {
+        return Row(
+          children: [
+            Text(
+              '0%',
+              style: TextStyle(
+                fontFamily: 'MySans',
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: theme.iconActive.withValues(alpha: 0.7),
               ),
-              // Progress
-              FractionallySizedBox(
-                widthFactor: _progress / 100,
-                child: Container(
-                  height: 2,
-                  decoration: BoxDecoration(
-                    color: theme.accent,
-                    borderRadius: BorderRadius.circular(1),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Stack(
+                alignment: Alignment.centerLeft,
+                children: [
+                  // Track
+                  Container(
+                    height: 2,
+                    decoration: BoxDecoration(
+                      color: theme.iconActive.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
                   ),
-                ),
-              ),
-              // Slider (invisible but interactive)
-              SliderTheme(
-                data: SliderTheme.of(context).copyWith(
-                  trackHeight: 2,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 8,
+                  // Progress
+                  FractionallySizedBox(
+                    widthFactor: progress / 100,
+                    child: Container(
+                      height: 2,
+                      decoration: BoxDecoration(
+                        color: theme.accent,
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                    ),
                   ),
-                  overlayShape: SliderComponentShape.noOverlay,
-                  activeTrackColor: Colors.transparent,
-                  inactiveTrackColor: Colors.transparent,
-                  thumbColor: theme.accent,
-                ),
-                child: Slider(
-                  min: 0,
-                  max: 100,
-                  value: _progress.clamp(0, 100),
-                  onChanged: widget.chapters.isEmpty
-                      ? null
-                      : _handleSliderChange,
-                ),
+                  // Slider (invisible but interactive)
+                  SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      trackHeight: 2,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 8,
+                      ),
+                      overlayShape: SliderComponentShape.noOverlay,
+                      activeTrackColor: Colors.transparent,
+                      inactiveTrackColor: Colors.transparent,
+                      thumbColor: theme.accent,
+                    ),
+                    child: Slider(
+                      min: 0,
+                      max: 100,
+                      value: progress.clamp(0, 100),
+                      onChanged: widget.chapters.isEmpty
+                          ? null
+                          : _handleSliderChange,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 16),
-        Text(
-          '100%',
-          style: TextStyle(
-            fontFamily: 'MySans',
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: theme.iconActive.withValues(alpha: 0.7),
-          ),
-        ),
-      ],
+            ),
+            const SizedBox(width: 16),
+            Text(
+              '100%',
+              style: TextStyle(
+                fontFamily: 'MySans',
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: theme.iconActive.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1588,11 +1744,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                               child: InkWell(
                                 onTap: () {
                                   if (_fontSize > 12) {
-                                    setState(() {
-                                      _fontSize--;
-                                      // Update immediately for instant feedback (button clicks are discrete)
-                                      _fontSizeNotifier.value = _fontSize;
-                                    });
+                                    // Update notifier immediately for instant visual feedback
+                                    _fontSize--;
+                                    _fontSizeNotifier.value = _fontSize;
+                                    setState(() {});
                                   }
                                 },
                                 borderRadius: BorderRadius.circular(8),
@@ -1615,11 +1770,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                               child: InkWell(
                                 onTap: () {
                                   if (_fontSize < 32) {
-                                    setState(() {
-                                      _fontSize++;
-                                      // Update immediately for instant feedback (button clicks are discrete)
-                                      _fontSizeNotifier.value = _fontSize;
-                                    });
+                                    // Update notifier immediately for instant visual feedback
+                                    _fontSize++;
+                                    _fontSizeNotifier.value = _fontSize;
+                                    setState(() {});
                                   }
                                 },
                                 borderRadius: BorderRadius.circular(8),
@@ -1761,9 +1915,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
+            // Update notifier immediately for instant visual feedback
+            _fontFamilyNotifier.value = font;
             setState(() {
               _fontFamily = font;
-              _fontFamilyNotifier.value = font;
             });
           },
           borderRadius: BorderRadius.circular(8),
@@ -1805,9 +1960,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     return Expanded(
       child: GestureDetector(
         onTap: () {
+          // Update notifier immediately for instant visual feedback
+          _lineHeightNotifier.value = value;
           setState(() {
             _lineHeight = value;
-            _lineHeightNotifier.value = value;
           });
         },
         child: Container(
@@ -1856,9 +2012,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     return Expanded(
       child: GestureDetector(
         onTap: () {
+          // Update notifier immediately for instant visual feedback
+          _wordSpacingNotifier.value = value;
           setState(() {
             _wordSpacing = value;
-            _wordSpacingNotifier.value = value;
           });
         },
         child: Container(
@@ -1895,12 +2052,14 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
 class _RenderedChapter {
   final String title;
-  final String html;
+  final String html; // Keep for backward compatibility if needed
+  final List<String> paragraphs; // Split paragraphs for virtualization
   final int wordCount;
 
   _RenderedChapter({
     required this.title,
     required this.html,
+    required this.paragraphs,
     required this.wordCount,
   });
 }

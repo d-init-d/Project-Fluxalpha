@@ -7,6 +7,46 @@ import 'package:html/parser.dart' as html_parser;
 
 import '../models/chapter_data.dart';
 
+// Cached regex patterns for better performance
+class _RegexCache {
+  static final RegExp _manifestItemRegex = RegExp(
+    r'<item\s+id="([^"]+)"[^>]*href="([^"]+)"',
+    caseSensitive: false,
+  );
+  
+  static final RegExp _manifestTitleRegex = RegExp(
+    r'<item\s+[^>]*href="([^"]+)"[^>]*title="([^"]+)"',
+    caseSensitive: false,
+  );
+  
+  static final RegExp _spineItemRefRegex = RegExp(
+    r'<itemref\s+idref="([^"]+)"',
+    caseSensitive: false,
+  );
+  
+  static final RegExp _spineTocRegex = RegExp(
+    r'<spine[^>]*toc="([^"]+)"',
+    caseSensitive: false,
+  );
+  
+  static final RegExp _htmlExtensionRegex = RegExp(
+    r'\.x?html$',
+    caseSensitive: false,
+  );
+  
+  static final RegExp _chapterHeadingRegex = RegExp(
+    r'^(chương|chuong|chapter|section|lời nói đầu|loi noi dau)',
+    caseSensitive: false,
+  );
+  
+  static RegExp get manifestItem => _manifestItemRegex;
+  static RegExp get manifestTitle => _manifestTitleRegex;
+  static RegExp get spineItemRef => _spineItemRefRegex;
+  static RegExp get spineToc => _spineTocRegex;
+  static RegExp get htmlExtension => _htmlExtensionRegex;
+  static RegExp get chapterHeading => _chapterHeadingRegex;
+}
+
 Future<List<ChapterData>> parseEpubInBackground(String filePath) async {
   try {
     final file = File(filePath);
@@ -97,10 +137,7 @@ _OpfData? _findOpfFile(Archive archive) {
 }
 
 Map<String, String> _buildManifestMap(String opfContent) {
-  final manifestMatches = RegExp(
-    r'<item\s+id="([^"]+)"[^>]*href="([^"]+)"',
-    caseSensitive: false,
-  ).allMatches(opfContent);
+  final manifestMatches = _RegexCache.manifestItem.allMatches(opfContent);
 
   final manifestMap = <String, String>{};
   for (final match in manifestMatches) {
@@ -114,10 +151,7 @@ Map<String, String> _buildManifestMap(String opfContent) {
 }
 
 Map<String, String> _buildManifestTitleMap(String opfContent) {
-  final manifestMatches = RegExp(
-    r'<item\s+[^>]*href="([^"]+)"[^>]*title="([^"]+)"',
-    caseSensitive: false,
-  ).allMatches(opfContent);
+  final manifestMatches = _RegexCache.manifestTitle.allMatches(opfContent);
 
   final titleMap = <String, String>{};
   for (final match in manifestMatches) {
@@ -131,10 +165,7 @@ Map<String, String> _buildManifestTitleMap(String opfContent) {
 }
 
 List<String> _buildSpineOrder(String opfContent) {
-  final spineMatches = RegExp(
-    r'<itemref\s+idref="([^"]+)"',
-    caseSensitive: false,
-  ).allMatches(opfContent);
+  final spineMatches = _RegexCache.spineItemRef.allMatches(opfContent);
 
   return spineMatches.map((match) => match.group(1)).whereType<String>().toList();
 }
@@ -161,10 +192,7 @@ Map<String, String> _extractNavLabels(
   final labels = <String, String>{};
 
   String? tocHref;
-  final tocMatch = RegExp(
-    r'<spine[^>]*toc="([^"]+)"',
-    caseSensitive: false,
-  ).firstMatch(opfData.content);
+  final tocMatch = _RegexCache.spineToc.firstMatch(opfData.content);
   if (tocMatch != null) {
     tocHref = manifestMap[tocMatch.group(1)!];
   }
@@ -266,7 +294,7 @@ String _deriveChapterTitle({
 
   final fileName = href.split('/').last;
   final withoutExtension = fileName.replaceAll(
-    RegExp(r'\.x?html$', caseSensitive: false),
+    _RegexCache.htmlExtension,
     '',
   );
   final cleaned = withoutExtension.replaceAll('_', ' ').trim();
@@ -311,8 +339,7 @@ String? _extractHeadingFromHtml(String htmlContent) {
 
 bool _looksLikeChapterHeading(String text) {
   final normalized = text.toLowerCase();
-  return RegExp(r'^(chương|chuong|chapter|section|lời nói đầu|loi noi dau)')
-      .hasMatch(normalized);
+  return _RegexCache.chapterHeading.hasMatch(normalized);
 }
 
 String _sanitizeTitle(String? rawTitle) {

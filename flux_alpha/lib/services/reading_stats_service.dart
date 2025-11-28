@@ -10,7 +10,10 @@ class ReadingStatsService extends ChangeNotifier {
 
   SharedPreferences? _prefs;
   Timer? _readingTimer;
+  Timer? _saveTimer;
   bool _isReading = false;
+  bool _hasUnsavedChanges = false;
+  static const Duration _saveDebounceDelay = Duration(seconds: 5);
 
   // Stats data
   int _todayReadingSeconds = 0;
@@ -105,8 +108,20 @@ class ReadingStatsService extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> _saveStats() async {
-    if (_prefs == null) return;
+  // Debounced save - batches multiple rapid changes
+  void _saveStats() {
+    _hasUnsavedChanges = true;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDebounceDelay, () async {
+      if (!_hasUnsavedChanges) return;
+      await _saveStatsImmediate();
+    });
+  }
+
+  // Immediate save (for critical operations)
+  Future<void> _saveStatsImmediate() async {
+    if (_prefs == null || !_hasUnsavedChanges) return;
+    _hasUnsavedChanges = false;
 
     await _prefs!.setInt('today_reading_seconds', _todayReadingSeconds);
     await _prefs!.setInt('total_reading_seconds', _totalReadingSeconds);
@@ -200,10 +215,8 @@ class ReadingStatsService extends ChangeNotifier {
       final todayIndex = DateTime.now().weekday - 1;
       _weeklyReadingSeconds[todayIndex]++;
       
-      // Save every 30 seconds
-      if (_todayReadingSeconds % 30 == 0) {
-        _saveStats();
-      }
+      // Save is debounced - will auto-save after 5 seconds of inactivity
+      _saveStats();
       
       notifyListeners();
     });
@@ -321,6 +334,11 @@ class ReadingStatsService extends ChangeNotifier {
   @override
   void dispose() {
     _readingTimer?.cancel();
+    _saveTimer?.cancel();
+    // Force final save before disposal
+    if (_hasUnsavedChanges) {
+      _saveStatsImmediate();
+    }
     super.dispose();
   }
 }

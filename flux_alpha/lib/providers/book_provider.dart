@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -8,6 +9,8 @@ import '../models/book.dart';
 // StateNotifier for managing book list
 class BookListNotifier extends StateNotifier<List<Book>> {
   static const String _storageKey = 'books_list';
+  Timer? _saveTimer;
+  static const Duration _saveDebounceDelay = Duration(milliseconds: 500);
 
   BookListNotifier() : super([]) {
     _loadBooks();
@@ -32,8 +35,26 @@ class BookListNotifier extends StateNotifier<List<Book>> {
     }
   }
 
-  // Save books to SharedPreferences
-  Future<void> _saveBooks() async {
+  // Save books to SharedPreferences with debouncing
+  void _saveBooks() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_saveDebounceDelay, () async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final String booksJson = json.encode(
+          state.map((book) => book.toJson()).toList(),
+        );
+        await prefs.setString(_storageKey, booksJson);
+      } catch (e) {
+        // Handle save error silently
+        debugPrint('Error saving books: $e');
+      }
+    });
+  }
+
+  // Force immediate save (for critical operations)
+  Future<void> _saveBooksImmediate() async {
+    _saveTimer?.cancel();
     try {
       final prefs = await SharedPreferences.getInstance();
       final String booksJson = json.encode(
@@ -42,25 +63,26 @@ class BookListNotifier extends StateNotifier<List<Book>> {
       await prefs.setString(_storageKey, booksJson);
     } catch (e) {
       // Handle save error silently
+      debugPrint('Error saving books: $e');
     }
   }
 
   // Add a new book
   Future<void> addBook(Book book) async {
     state = [...state, book];
-    await _saveBooks();
+    _saveBooks();
   }
 
   // Add multiple books
   Future<void> addBooks(List<Book> books) async {
     state = [...state, ...books];
-    await _saveBooks();
+    _saveBooks();
   }
 
   // Remove a book by id
   Future<void> removeBook(String id) async {
     state = state.where((book) => book.id != id).toList();
-    await _saveBooks();
+    await _saveBooksImmediate(); // Immediate save for delete operations
   }
 
   // Update a book
@@ -69,7 +91,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
       for (final book in state)
         if (book.id == updatedBook.id) updatedBook else book,
     ];
-    await _saveBooks();
+    _saveBooks();
   }
 
   // Update book progress
@@ -89,7 +111,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
         else
           book,
     ];
-    await _saveBooks();
+    _saveBooks(); // Debounced save for frequent progress updates
   }
 
   // Mark a book as opened by updating its lastRead timestamp
@@ -106,7 +128,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
         else
           book,
     ];
-    await _saveBooks();
+    _saveBooks();
   }
 
   // Get books by category
@@ -137,7 +159,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
   // Clear all books (for testing)
   Future<void> clearAll() async {
     state = [];
-    await _saveBooks();
+    await _saveBooksImmediate();
   }
 
   // Toggle read status
@@ -146,7 +168,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
       for (final book in state)
         if (book.id == id) book.copyWith(isRead: !book.isRead) else book,
     ];
-    await _saveBooks();
+    _saveBooks();
   }
 
   // Delete a book by id and its local files
@@ -199,7 +221,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
         '[Delete] Removing book from list and updating SharedPreferences...',
       );
       state = state.where((book) => book.id != id).toList();
-      await _saveBooks();
+      await _saveBooksImmediate(); // Immediate save for delete operations
       debugPrint(
         '[Delete] Success: Book removed from list and SharedPreferences updated',
       );
@@ -208,7 +230,7 @@ class BookListNotifier extends StateNotifier<List<Book>> {
       // Even on error, try to remove from list if possible
       try {
         state = state.where((book) => book.id != id).toList();
-        await _saveBooks();
+        await _saveBooksImmediate();
         debugPrint(
           '[Delete] Success: Book removed from list despite file deletion errors',
         );
@@ -219,6 +241,15 @@ class BookListNotifier extends StateNotifier<List<Book>> {
         rethrow;
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    // Note: We can't await in dispose, but _saveBooksImmediate will complete quickly
+    // For critical final saves, the app should call _saveBooksImmediate() explicitly
+    // before disposing the provider if needed
+    super.dispose();
   }
 }
 
