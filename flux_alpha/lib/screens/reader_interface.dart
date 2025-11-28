@@ -454,8 +454,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       padding: const EdgeInsets.only(bottom: 24.0), // Paragraph spacing
                       child: HtmlWidget(
                         paragraphHtml,
-                        // Stable key per paragraph
-                        key: ValueKey('para_${_currentChapterIndex}_$index'),
+                        // Include fontFamily in key to trigger rebuild when font changes
+                        key: ValueKey('para_${_currentChapterIndex}_${index}_$fontFamily'),
                         renderMode: RenderMode.column,
                         // Direct textStyle injection for instant updates
                         textStyle: textStyle,
