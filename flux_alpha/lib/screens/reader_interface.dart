@@ -423,7 +423,17 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                               return {'text-align': 'justify'};
                             },
                           ),
-                        const SizedBox(height: 160),
+
+                        // Chapter Navigation Buttons
+                        const SizedBox(height: 48),
+                        Container(
+                          width: double.infinity,
+                          height: 1,
+                          color: theme.text.withValues(alpha: 0.15),
+                        ),
+                        const SizedBox(height: 32),
+                        _buildChapterNavigationButtons(theme),
+                        const SizedBox(height: 180),
                       ],
                     ),
                   ),
@@ -689,7 +699,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         decoration: BoxDecoration(
           color: theme.panelBg,
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.1),
+              blurRadius: 10,
+            ),
           ],
         ),
         child: SafeArea(
@@ -738,29 +751,111 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     );
   }
 
+  Widget _buildChapterNavigationButtons(ReaderTheme theme) {
+    final totalChapters = widget.chapters.isEmpty ? 18 : widget.chapters.length;
+    final hasPrevious = _currentChapterIndex > 0;
+    final hasNext = _currentChapterIndex < totalChapters - 1;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Previous Chapter Button
+        if (hasPrevious)
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _currentChapterIndex--;
+                _renderedChapter = _prepareChapter();
+                _resetScroll();
+              });
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(LucideIcons.arrowLeft, size: 18, color: theme.text),
+                const SizedBox(width: 8),
+                Text(
+                  'Chương trước',
+                  style: GoogleFonts.getFont(
+                    'Manrope',
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: theme.text,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+
+        // Next Chapter Button
+        if (hasNext)
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _currentChapterIndex++;
+                _renderedChapter = _prepareChapter();
+                _resetScroll();
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+              decoration: BoxDecoration(
+                color: theme.buttonBg,
+                borderRadius: BorderRadius.circular(32),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Chương tiếp theo',
+                    style: GoogleFonts.getFont(
+                      'Manrope',
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: theme.buttonText,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    LucideIcons.arrowRight,
+                    size: 18,
+                    color: theme.buttonText,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          const SizedBox.shrink(),
+      ],
+    );
+  }
+
   Widget _buildBottomControls(ReaderTheme theme) {
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       left: 0,
       right: 0,
-      bottom: _showControls ? 0 : -400,
+      bottom: _showControls ? 0 : -300,
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             decoration: BoxDecoration(
               color: theme.panelBg,
-              borderRadius: BorderRadius.circular(32),
+              borderRadius: BorderRadius.circular(24),
               border: theme.panelBorder != Colors.transparent
                   ? Border.all(color: theme.panelBorder)
                   : null,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 25,
-                  offset: const Offset(0, 10),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
@@ -773,9 +868,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 // Progress Bar
                 _buildProgressBar(theme),
 
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
 
-                // Main Controls Row
+                // Main Controls Row - More compact
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -786,20 +881,20 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
+                          horizontal: 12,
+                          vertical: 6,
                         ),
                         decoration: BoxDecoration(
                           color: _showAppearanceMenu
                               ? theme.buttonBg
                               : Colors.transparent,
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(
                           'Aa',
                           style: GoogleFonts.getFont(
                             'Playfair Display',
-                            fontSize: 18,
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: _showAppearanceMenu
                                 ? theme.buttonText
@@ -816,7 +911,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                           'CHƯƠNG ${_currentChapterIndex + 1}/${widget.chapters.isEmpty ? 18 : widget.chapters.length}',
                           style: GoogleFonts.getFont(
                             'Manrope',
-                            fontSize: 11,
+                            fontSize: 10,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 1,
                             color: theme.iconActive,
@@ -834,29 +929,19 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       ],
                     ),
 
-                    // Right: Quick Theme Toggle
+                    // Right: TOC Button
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _themeMode = _themeMode == 'paper' ? 'dark' : 'paper';
-                        });
-                      },
+                      onTap: () => setState(() => _showTOC = true),
                       child: Container(
-                        width: 40,
-                        height: 40,
+                        width: 36,
+                        height: 36,
                         decoration: BoxDecoration(
                           color: theme.buttonSecondaryBg,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.1),
-                              blurRadius: 4,
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(
-                          LucideIcons.sun,
-                          size: 20,
+                          LucideIcons.list,
+                          size: 18,
                           color: theme.buttonSecondaryText,
                         ),
                       ),
@@ -950,7 +1035,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
       margin: const EdgeInsets.only(bottom: 24),
       padding: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: theme.text.withValues(alpha: 0.05))),
+        border: Border(
+          bottom: BorderSide(color: theme.text.withValues(alpha: 0.05)),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1192,7 +1279,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 'Manrope',
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                color: isSelected ? theme.text : theme.text.withValues(alpha: 0.6),
+                color: isSelected
+                    ? theme.text
+                    : theme.text.withValues(alpha: 0.6),
               ),
             ),
           ),
@@ -1230,7 +1319,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
               child: Icon(
                 LucideIcons.alignJustify,
                 size: 16,
-                color: isSelected ? theme.text : theme.text.withValues(alpha: 0.5),
+                color: isSelected
+                    ? theme.text
+                    : theme.text.withValues(alpha: 0.5),
               ),
             ),
           ),
@@ -1270,7 +1361,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
               child: Icon(
                 LucideIcons.moveHorizontal,
                 size: 16,
-                color: isSelected ? theme.text : theme.text.withValues(alpha: 0.5),
+                color: isSelected
+                    ? theme.text
+                    : theme.text.withValues(alpha: 0.5),
               ),
             ),
           ),
