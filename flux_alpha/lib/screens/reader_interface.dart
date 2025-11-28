@@ -170,7 +170,6 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   TextSelection? _currentSelection;
   String? _selectedText;
   OverlayEntry? _selectionMenuOverlay;
-  final LayerLink _menuLayerLink = LayerLink();
   final List<Highlight> _highlights = [];
   final List<Note> _notes = [];
 
@@ -291,31 +290,37 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     _hideSelectionMenu();
   }
 
-  void _handleTextSelection(TextSelection selection, String selectedText) {
+  void _handleTextSelection(
+    TextSelection selection,
+    String selectedText,
+    Offset? position,
+  ) {
     print(
-      '_handleTextSelection called: selection=$selection, text="$selectedText"',
+      '_handleTextSelection called: selection=$selection, text="$selectedText", position=$position',
     );
     if (selection.isValid && selectedText.trim().isNotEmpty) {
       setState(() {
         _currentSelection = selection;
         _selectedText = selectedText.trim();
       });
-      print('Showing menu for: "$_selectedText"');
-      _showSelectionMenu();
+      print('Showing menu for: "$_selectedText" at $position');
+      _showSelectionMenu(position);
     } else {
       print('Hiding menu - invalid selection or empty text');
       _hideSelectionMenu();
     }
   }
 
-  void _showSelectionMenu() {
-    print('_showSelectionMenu called');
+  void _showSelectionMenu(Offset? position) {
+    print('_showSelectionMenu called with position: $position');
     _hideSelectionMenu();
+    if (position == null) return;
+
     final overlay = Overlay.of(context);
     _selectionMenuOverlay = OverlayEntry(
       builder: (context) {
         print('Building selection menu overlay');
-        return _buildSelectionMenu();
+        return _buildSelectionMenu(position);
       },
     );
     overlay.insert(_selectionMenuOverlay!);
@@ -405,102 +410,111 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     );
   }
 
-  Widget _buildSelectionMenu() {
+  Widget _buildSelectionMenu(Offset position) {
     print('_buildSelectionMenu called, _selectedText: "$_selectedText"');
     if (_selectedText == null || _selectedText!.isEmpty) {
       print('_buildSelectionMenu returning empty - no selected text');
       return const SizedBox.shrink();
     }
 
-    print('_buildSelectionMenu building menu widget');
-    return Positioned.fill(
-      child: IgnorePointer(
-        ignoring: false,
-        child: Stack(
-          children: [
-            // Invisible tap area to close menu when tapping outside
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: _hideSelectionMenu,
-                child: Container(color: Colors.transparent),
-              ),
+    // Calculate menu position (centered above the selection)
+    // We'll use a fixed width for the menu for simplicity in calculation, or let it size itself
+    // but we need to offset it so it's centered.
+    // Assuming menu height is around 60px including arrow.
+
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      child: Stack(
+        children: [
+          // Invisible tap area to close menu when tapping outside
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: _hideSelectionMenu,
+              behavior: HitTestBehavior.translucent,
+              child: Container(color: Colors.transparent),
             ),
-            // Menu positioned above selection
-            Positioned(
-              child: CompositedTransformFollower(
-                link: _menuLayerLink,
-                showWhenUnlinked: false,
-                offset: const Offset(0, -60),
-                child: Material(
-                  color: Colors.transparent,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Menu container
-                      Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        decoration: BoxDecoration(
-                          color: _currentTheme.panelBg,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
+          ),
+          // Menu positioned above selection
+          Positioned(
+            left: position.dx - 150, // Center horizontally (approx)
+            top: position.dy - 70, // Position above
+            child: Material(
+              color: Colors.transparent,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Menu container
+                  Container(
+                    width: 300, // Fixed width for stability
+                    decoration: BoxDecoration(
+                      color: const Color(
+                        0xFF2D2D2D,
+                      ), // Dark background like image
+                      borderRadius: BorderRadius.circular(32),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Highlight button
-                            _buildMenuButton(
-                              icon: LucideIcons.highlighter,
-                              label: 'Highlight',
-                              onTap: _handleHighlight,
-                              color: _currentTheme.accent,
-                            ),
-                            // Divider
-                            Container(
-                              width: 1,
-                              height: 32,
-                              color: _currentTheme.text.withValues(alpha: 0.1),
-                            ),
-                            // Take Note button
-                            _buildMenuButton(
-                              icon: LucideIcons.pencil,
-                              label: 'Ghi chú',
-                              onTap: _handleTakeNote,
-                              color: _currentTheme.text,
-                            ),
-                            // Divider
-                            Container(
-                              width: 1,
-                              height: 32,
-                              color: _currentTheme.text.withValues(alpha: 0.1),
-                            ),
-                            // Copy button
-                            _buildMenuButton(
-                              icon: LucideIcons.copy,
-                              label: 'Sao chép',
-                              onTap: _handleCopy,
-                              color: _currentTheme.text,
-                            ),
-                          ],
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Highlight button (Red/Orange like image)
+                        _buildMenuButton(
+                          icon: LucideIcons
+                              .circle, // Using circle to mimic the dot
+                          label: '',
+                          onTap: _handleHighlight,
+                          color: const Color(0xFFD35400), // Burnt orange
+                          isIconOnly: true,
                         ),
-                      ),
-                      // Arrow pointing down
-                      CustomPaint(
-                        size: const Size(12, 8),
-                        painter: _ArrowPainter(color: _currentTheme.panelBg),
-                      ),
-                    ],
+                        // Divider
+                        Container(
+                          width: 1,
+                          height: 20,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        // Take Note button
+                        _buildMenuButton(
+                          icon: LucideIcons.pencil,
+                          label: '',
+                          onTap: _handleTakeNote,
+                          color: Colors.white,
+                          isIconOnly: true,
+                        ),
+                        // Divider
+                        Container(
+                          width: 1,
+                          height: 20,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                        // Copy button
+                        _buildMenuButton(
+                          icon: LucideIcons.copy,
+                          label: '',
+                          onTap: _handleCopy,
+                          color: Colors.white,
+                          isIconOnly: true,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
+                  // Arrow pointing down
+                  CustomPaint(
+                    size: const Size(12, 8),
+                    painter: _ArrowPainter(color: const Color(0xFF2D2D2D)),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -510,30 +524,33 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     required String label,
     required VoidCallback onTap,
     required Color color,
+    bool isIconOnly = false,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(32),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: GoogleFonts.getFont(
-                  'Manrope',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: color,
+          child: isIconOnly
+              ? Icon(icon, size: 20, color: color)
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(icon, size: 18, color: color),
+                    const SizedBox(width: 8),
+                    Text(
+                      label,
+                      style: GoogleFonts.getFont(
+                        'Manrope',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: color,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -664,61 +681,57 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             ),
                           )
                         else
-                          CompositedTransformTarget(
-                            link: _menuLayerLink,
-                            child: SelectionArea(
-                              selectionControls: CustomTextSelectionControls(
-                                onSelectionChanged: _handleTextSelection,
-                                theme: theme,
-                              ),
-                              child: RepaintBoundary(
-                                child: HtmlWidget(
-                                  _renderedChapter!.html,
-                                  key: ValueKey(
-                                    'chapter_${_currentChapterIndex}',
-                                  ),
-                                  renderMode: RenderMode.column,
-                                  textStyle: GoogleFonts.getFont(
-                                    _fontFamilyName,
-                                    fontSize: _fontSize,
-                                    height: _lineHeight,
-                                    wordSpacing: _getWordSpacingValue(),
-                                    color: theme.text,
-                                  ),
-                                  customStylesBuilder: (element) {
-                                    final styles = <String, String>{};
-
-                                    // Apply font-family to all text elements
-                                    if (element.localName == 'p' ||
-                                        element.localName == 'span' ||
-                                        element.localName == 'div' ||
-                                        element.localName == 'h1' ||
-                                        element.localName == 'h2' ||
-                                        element.localName == 'h3' ||
-                                        element.localName == 'h4' ||
-                                        element.localName == 'h5' ||
-                                        element.localName == 'h6') {
-                                      styles['font-family'] = _fontFamilyName;
-                                      styles['font-size'] = '${_fontSize}px';
-                                      styles['line-height'] = _lineHeight
-                                          .toString();
-                                      if (_getWordSpacingValue() > 0) {
-                                        styles['word-spacing'] =
-                                            '${_getWordSpacingValue()}px';
-                                      }
-                                    }
-
-                                    // Paragraph specific styles
-                                    if (element.localName == 'p') {
-                                      styles['margin'] = '0 0 1.5em 0';
-                                      styles['text-align'] = 'justify';
-                                    } else {
-                                      styles['text-align'] = 'justify';
-                                    }
-
-                                    return styles;
-                                  },
+                          // Removed CompositedTransformTarget and LayerLink
+                          SelectionArea(
+                            selectionControls: CustomTextSelectionControls(
+                              onSelectionChanged: _handleTextSelection,
+                              theme: theme,
+                            ),
+                            child: RepaintBoundary(
+                              child: HtmlWidget(
+                                _renderedChapter!.html,
+                                key: ValueKey('chapter_$_currentChapterIndex'),
+                                renderMode: RenderMode.column,
+                                textStyle: GoogleFonts.getFont(
+                                  _fontFamilyName,
+                                  fontSize: _fontSize,
+                                  height: _lineHeight,
+                                  wordSpacing: _getWordSpacingValue(),
+                                  color: theme.text,
                                 ),
+                                customStylesBuilder: (element) {
+                                  final styles = <String, String>{};
+
+                                  // Apply font-family to all text elements
+                                  if (element.localName == 'p' ||
+                                      element.localName == 'span' ||
+                                      element.localName == 'div' ||
+                                      element.localName == 'h1' ||
+                                      element.localName == 'h2' ||
+                                      element.localName == 'h3' ||
+                                      element.localName == 'h4' ||
+                                      element.localName == 'h5' ||
+                                      element.localName == 'h6') {
+                                    styles['font-family'] = _fontFamilyName;
+                                    styles['font-size'] = '${_fontSize}px';
+                                    styles['line-height'] = _lineHeight
+                                        .toString();
+                                    if (_getWordSpacingValue() > 0) {
+                                      styles['word-spacing'] =
+                                          '${_getWordSpacingValue()}px';
+                                    }
+                                  }
+
+                                  // Paragraph specific styles
+                                  if (element.localName == 'p') {
+                                    styles['margin'] = '0 0 1.5em 0';
+                                    styles['text-align'] = 'justify';
+                                  } else {
+                                    styles['text-align'] = 'justify';
+                                  }
+
+                                  return styles;
+                                },
                               ),
                             ),
                           ),
@@ -1737,7 +1750,7 @@ class _RenderedChapter {
 
 // Custom Text Selection Controls
 class CustomTextSelectionControls extends TextSelectionControls {
-  final Function(TextSelection, String) onSelectionChanged;
+  final Function(TextSelection, String, Offset?) onSelectionChanged;
   final ReaderTheme theme;
 
   CustomTextSelectionControls({
@@ -1775,14 +1788,30 @@ class CustomTextSelectionControls extends TextSelectionControls {
         'buildToolbar - calling onSelectionChanged with text: "$selectedText"',
       );
       // Call immediately, then also in post frame to ensure it's processed
-      onSelectionChanged(selection, selectedText);
+      // Pass the global position
+
+      Offset? position;
+      if (endpoints.isNotEmpty) {
+        // Calculate midpoint of the selection
+        // endpoints are relative to the globalEditableRegion's top-left
+        // globalEditableRegion is the rect of the render object in global coordinates
+
+        final TextSelectionPoint start = endpoints.first;
+        // If we have multiple endpoints (multi-line selection), we might want to use the first line's start
+        // or calculate a bounding box. For simplicity, let's use the start of the selection.
+
+        // Adjust position to be global
+        position = globalEditableRegion.topLeft + start.point;
+      }
+
+      onSelectionChanged(selection, selectedText, position);
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        onSelectionChanged(selection, selectedText);
+        onSelectionChanged(selection, selectedText, position);
       });
     } else {
       // Clear selection if empty
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        onSelectionChanged(const TextSelection.collapsed(offset: -1), '');
+        onSelectionChanged(const TextSelection.collapsed(offset: -1), '', null);
       });
     }
 
