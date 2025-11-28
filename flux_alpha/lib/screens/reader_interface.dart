@@ -469,112 +469,156 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   }
 
   Widget _buildTableOfContents(ReaderTheme theme) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final tocHeight =
+        screenHeight * 0.5; // 50% chiều cao màn hình - nhỏ hơn để bằng menu bar
+    // Tính toán vị trí bottom dựa trên chiều cao menu bar (khoảng 120-150px với padding)
+    final menuBarHeight = 150.0; // Ước tính chiều cao menu bar
+    final bottomPosition = _showTOC ? menuBarHeight : -tocHeight;
+
     return AnimatedPositioned(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      top: 0,
-      bottom: 0,
-      left: _showTOC ? 0 : -300, // w-3/4 max-w-xs -> approx 300
-      width: 300,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.panelBg,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(5, 0),
+      left: 0,
+      right: 0,
+      bottom: bottomPosition,
+      height: tocHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 24,
+        ), // Cùng padding với menu bar
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 672, // Cùng maxWidth với menu bar
             ),
-          ],
-        ),
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Container(
+              decoration: BoxDecoration(
+                color: theme.panelBg,
+                borderRadius: BorderRadius.circular(
+                  32,
+                ), // Bo góc tất cả các góc giống menu bar
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Mục lục',
-                      style: GoogleFonts.getFont(
-                        'Playfair Display',
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: theme.text,
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 12),
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.text.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
                       ),
                     ),
-                    IconButton(
-                      onPressed: () => setState(() => _showTOC = false),
-                      icon: Icon(LucideIcons.x, color: theme.text, size: 20),
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Mục lục',
+                            style: GoogleFonts.getFont(
+                              'Playfair Display',
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: theme.text,
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () => setState(() => _showTOC = false),
+                            icon: Icon(
+                              LucideIcons.x,
+                              color: theme.text,
+                              size: 20,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // List of chapters
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        itemCount: widget.chapters.isEmpty
+                            ? 10
+                            : widget.chapters.length,
+                        itemBuilder: (context, index) {
+                          final isActive = index == _currentChapterIndex;
+                          final title = widget.chapters.isEmpty
+                              ? (index == 0
+                                    ? 'Khởi đầu'
+                                    : 'Hành trình ${index + 1}')
+                              : widget.chapters[index].title;
+
+                          return InkWell(
+                            onTap: () {
+                              setState(() {
+                                _currentChapterIndex = index;
+                                _showTOC = false;
+                                _renderedChapter = _prepareChapter();
+                                _resetScroll();
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: theme.text.withValues(alpha: 0.05),
+                                  ),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'CHƯƠNG ${index + 1}',
+                                    style: GoogleFonts.getFont(
+                                      'Manrope',
+                                      fontSize: 10,
+                                      color: theme.textSecondary,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    title,
+                                    style: GoogleFonts.getFont(
+                                      'Playfair Display',
+                                      fontSize: 16,
+                                      fontWeight: isActive
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                      color: isActive
+                                          ? theme.text
+                                          : theme.text.withValues(alpha: 0.7),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  itemCount: widget.chapters.isEmpty
-                      ? 10
-                      : widget.chapters.length,
-                  itemBuilder: (context, index) {
-                    final isActive = index == _currentChapterIndex;
-                    final title = widget.chapters.isEmpty
-                        ? (index == 0 ? 'Khởi đầu' : 'Hành trình ${index + 1}')
-                        : widget.chapters[index].title;
-
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          _currentChapterIndex = index;
-                          _showTOC = false;
-                          _renderedChapter = _prepareChapter();
-                          _resetScroll();
-                        });
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border(
-                            bottom: BorderSide(
-                              color: theme.text.withValues(alpha: 0.05),
-                            ),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'CHƯƠNG ${index + 1}',
-                              style: GoogleFonts.getFont(
-                                'Manrope',
-                                fontSize: 10,
-                                color: theme.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              title,
-                              style: GoogleFonts.getFont(
-                                'Playfair Display',
-                                fontSize: 16,
-                                fontWeight: isActive
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                color: isActive
-                                    ? theme.text
-                                    : theme.text.withValues(alpha: 0.7),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
