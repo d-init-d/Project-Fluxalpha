@@ -842,113 +842,120 @@ class _ReaderInterfaceState extends State<ReaderInterface>
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            decoration: BoxDecoration(
-              color: theme.panelBg,
-              borderRadius: BorderRadius.circular(24),
-              border: theme.panelBorder != Colors.transparent
-                  ? Border.all(color: theme.panelBorder)
-                  : null,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.15),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Appearance Menu (Expandable)
-                if (_showAppearanceMenu) _buildAppearanceMenu(theme),
-
-                // Progress Bar
-                _buildProgressBar(theme),
-
-                const SizedBox(height: 16),
-
-                // Main Controls Row - More compact
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Left: Aa Button
-                    GestureDetector(
-                      onTap: () => setState(
-                        () => _showAppearanceMenu = !_showAppearanceMenu,
-                      ),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _showAppearanceMenu
-                              ? theme.buttonBg
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          'Aa',
-                          style: GoogleFonts.getFont(
-                            'Playfair Display',
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: _showAppearanceMenu
-                                ? theme.buttonText
-                                : theme.iconActive,
-                          ),
-                        ),
-                      ),
+          padding: const EdgeInsets.all(24), // p-6 = 24px
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth: 672,
+              ), // max-w-2xl = 672px
+              child: Container(
+                padding: const EdgeInsets.all(24), // p-6 = 24px
+                decoration: BoxDecoration(
+                  color: theme.panelBg,
+                  borderRadius: BorderRadius.circular(32), // rounded-[32px]
+                  border: theme.panelBorder != Colors.transparent
+                      ? Border.all(color: theme.panelBorder)
+                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Appearance Menu (Expandable)
+                    if (_showAppearanceMenu) _buildAppearanceMenu(theme),
 
-                    // Center: Chapter Info
-                    Column(
+                    // Progress Bar
+                    _buildProgressBar(theme),
+
+                    const SizedBox(height: 16),
+
+                    // Main Controls Row - More compact
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'CHƯƠNG ${_currentChapterIndex + 1}/${widget.chapters.isEmpty ? 18 : widget.chapters.length}',
-                          style: GoogleFonts.getFont(
-                            'Manrope',
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 1,
-                            color: theme.iconActive,
+                        // Left: Aa Button
+                        GestureDetector(
+                          onTap: () => setState(
+                            () => _showAppearanceMenu = !_showAppearanceMenu,
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _showAppearanceMenu
+                                  ? theme.buttonBg
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              'Aa',
+                              style: GoogleFonts.getFont(
+                                'Playfair Display',
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: _showAppearanceMenu
+                                    ? theme.buttonText
+                                    : theme.iconActive,
+                              ),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Còn khoảng $_estimatedMinutes phút đọc',
-                          style: GoogleFonts.getFont(
-                            'Manrope',
-                            fontSize: 10,
-                            color: theme.textSecondary,
+
+                        // Center: Chapter Info
+                        Column(
+                          children: [
+                            Text(
+                              'CHƯƠNG ${_currentChapterIndex + 1}/${widget.chapters.isEmpty ? 18 : widget.chapters.length}',
+                              style: GoogleFonts.getFont(
+                                'Manrope',
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1,
+                                color: theme.iconActive,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Còn khoảng $_estimatedMinutes phút đọc',
+                              style: GoogleFonts.getFont(
+                                'Manrope',
+                                fontSize: 10,
+                                color: theme.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // Right: TOC Button
+                        GestureDetector(
+                          onTap: () => setState(() => _showTOC = true),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: theme.buttonSecondaryBg,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              LucideIcons.list,
+                              size: 18,
+                              color: theme.buttonSecondaryText,
+                            ),
                           ),
                         ),
                       ],
                     ),
-
-                    // Right: TOC Button
-                    GestureDetector(
-                      onTap: () => setState(() => _showTOC = true),
-                      child: Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: theme.buttonSecondaryBg,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          LucideIcons.list,
-                          size: 18,
-                          color: theme.buttonSecondaryText,
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
