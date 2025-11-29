@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/color_theme.dart';
 import '../models/font_theme.dart';
@@ -85,8 +85,7 @@ class ReadingCalendarCard extends StatelessWidget {
             children: [
               Text(
                 AppLocalizations.of(context)!.reading_schedule,
-                style: GoogleFonts.getFont(
-                  fontTheme.serifFont,
+                style: TextStyle(fontFamily: fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -113,8 +112,7 @@ class ReadingCalendarCard extends StatelessWidget {
                   children: [
                     Text(
                       days[index],
-                      style: GoogleFonts.getFont(
-                        fontTheme.sansFont,
+                      style: TextStyle(fontFamily: fontTheme.sansFont,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: isActive
@@ -125,8 +123,7 @@ class ReadingCalendarCard extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       '${11 + index}',
-                      style: GoogleFonts.getFont(
-                        fontTheme.sansFont,
+                      style: TextStyle(fontFamily: fontTheme.sansFont,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: isActive ? theme.cardBackground : textColor,
@@ -178,8 +175,7 @@ class ReadingCalendarCard extends StatelessWidget {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.todays_goal,
-                        style: GoogleFonts.getFont(
-                          fontTheme.sansFont,
+                        style: TextStyle(fontFamily: fontTheme.sansFont,
                           fontWeight: FontWeight.bold,
                           color: textColor,
                         ),
@@ -187,8 +183,7 @@ class ReadingCalendarCard extends StatelessWidget {
                       const SizedBox(height: 4),
                       Text(
                         AppLocalizations.of(context)!.goal_msg,
-                        style: GoogleFonts.getFont(
-                          fontTheme.sansFont,
+                        style: TextStyle(fontFamily: fontTheme.sansFont,
                           fontSize: 12,
                           color: theme.textLight,
                           height: 1.4,
@@ -243,8 +238,7 @@ class NotesCard extends StatelessWidget {
             children: [
               Text(
                 AppLocalizations.of(context)!.notes_highlight,
-                style: GoogleFonts.getFont(
-                  fontTheme.serifFont,
+                style: TextStyle(fontFamily: fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -260,3 +254,5 @@ class NotesCard extends StatelessWidget {
     );
   }
 }
+
+

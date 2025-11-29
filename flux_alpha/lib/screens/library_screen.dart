@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/color_theme.dart';
@@ -98,8 +98,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             children: [
               Text(
                 'Thư viện của tôi',
-                style: GoogleFonts.getFont(
-                  widget.fontTheme.serifFont,
+                style: TextStyle(fontFamily: widget.fontTheme.serifFont,
                   fontSize: 42,
                   fontWeight: FontWeight.w500,
                   color: textColor,
@@ -139,8 +138,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   .length;
               return Text(
                 '$totalBooks cuốn sách • $currentlyReading đang đọc',
-                style: GoogleFonts.getFont(
-                  widget.fontTheme.sansFont,
+                style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                   fontSize: 14,
                   color: textLight,
                 ),
@@ -181,8 +179,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'Chưa có sách nào',
-                                style: GoogleFonts.getFont(
-                                  widget.fontTheme.serifFont,
+                                style: TextStyle(fontFamily: widget.fontTheme.serifFont,
                                   fontSize: 20,
                                   color: textColor,
                                 ),
@@ -190,8 +187,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Nhấn nút + để thêm sách mới',
-                                style: GoogleFonts.getFont(
-                                  widget.fontTheme.sansFont,
+                                style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                                   fontSize: 14,
                                   color: textLight,
                                 ),
@@ -277,8 +273,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                   child: Text(
                   category,
-                  style: GoogleFonts.getFont(
-                    widget.fontTheme.sansFont,
+                  style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                     color: isSelected ? textColor : widget.theme.textLight,
@@ -312,8 +307,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   Text(
                     'Sắp xếp: Tên A-Z',
-                    style: GoogleFonts.getFont(
-                      widget.fontTheme.sansFont,
+                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                       fontSize: 12,
                       color: textColor,
                     ),
@@ -375,8 +369,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                   child: Text(
                     'XONG',
-                    style: GoogleFonts.getFont(
-                      widget.fontTheme.sansFont,
+                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -396,8 +389,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   Text(
                     book.title,
-                    style: GoogleFonts.getFont(
-                      widget.fontTheme.serifFont,
+                    style: TextStyle(fontFamily: widget.fontTheme.serifFont,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: textColor,
@@ -408,8 +400,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   const SizedBox(height: 4),
                   Text(
                     book.author,
-                    style: GoogleFonts.getFont(
-                      widget.fontTheme.sansFont,
+                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                       fontSize: 12,
                       color: textLight,
                     ),
@@ -476,8 +467,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Xóa sách',
-          style: GoogleFonts.getFont(
-            widget.fontTheme.serifFont,
+          style: TextStyle(fontFamily: widget.fontTheme.serifFont,
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: widget.isDarkMode
@@ -487,8 +477,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
         content: Text(
           'Bạn có chắc muốn xóa sách này không?',
-          style: GoogleFonts.getFont(
-            widget.fontTheme.sansFont,
+          style: TextStyle(fontFamily: widget.fontTheme.sansFont,
             fontSize: 16,
             color: widget.isDarkMode
                 ? Colors.grey[400]
@@ -500,8 +489,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Hủy',
-              style: GoogleFonts.getFont(
-                widget.fontTheme.sansFont,
+              style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                 fontSize: 16,
                 color: widget.isDarkMode
                     ? Colors.grey[400]
@@ -514,8 +502,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(
               'Đồng ý',
-              style: GoogleFonts.getFont(
-                widget.fontTheme.sansFont,
+              style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.red,
@@ -637,8 +624,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: 12),
           Text(
             collection['title'],
-            style: GoogleFonts.getFont(
-              widget.fontTheme.serifFont,
+            style: TextStyle(fontFamily: widget.fontTheme.serifFont,
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -649,8 +635,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: 4),
           Text(
             '${collection['count']} cuốn sách',
-            style: GoogleFonts.getFont(
-              widget.fontTheme.sansFont,
+            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
               fontSize: 12,
               color: textLight,
             ),
@@ -660,3 +645,4 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 }
+

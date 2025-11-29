@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -120,21 +119,28 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
         final fileName = originalFile.path.split(Platform.pathSeparator).last;
 
         // Normalize paths to use consistent separators
-        final sourcePath = originalFile.path.replaceAll('/', Platform.pathSeparator).replaceAll('\\', Platform.pathSeparator);
-        final booksDir = PathHelper.getBooksDirectory().replaceAll('/', Platform.pathSeparator).replaceAll('\\', Platform.pathSeparator);
+        final sourcePath = originalFile.path
+            .replaceAll('/', Platform.pathSeparator)
+            .replaceAll('\\', Platform.pathSeparator);
+        final booksDir = PathHelper.getBooksDirectory()
+            .replaceAll('/', Platform.pathSeparator)
+            .replaceAll('\\', Platform.pathSeparator);
         final destinationPath = '$booksDir${Platform.pathSeparator}$fileName';
-        
+
         // Check if source and destination are the same (file already in library)
         final normalizedSource = File(sourcePath).absolute.path;
         final normalizedDest = File(destinationPath).absolute.path;
-        
+
         if (normalizedSource == normalizedDest) {
-          debugPrint('[Upload] File already in library, skipping copy: $fileName');
+          debugPrint(
+            '[Upload] File already in library, skipping copy: $fileName',
+          );
           // Use existing file path
           final file = File(normalizedSource);
-          
+
           // Continue with metadata extraction
-          final bookId = DateTime.now().millisecondsSinceEpoch.toString() + i.toString();
+          final bookId =
+              DateTime.now().millisecondsSinceEpoch.toString() + i.toString();
           LocalBookMetadata metadata;
           try {
             metadata = await LocalMetadataService.extractMetadata(
@@ -175,14 +181,16 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
         // Copy file to library with error handling
         File? file;
         try {
-          debugPrint('[Upload] Copying file from $normalizedSource to $normalizedDest');
+          debugPrint(
+            '[Upload] Copying file from $normalizedSource to $normalizedDest',
+          );
           final copiedFile = await originalFile.copy(destinationPath);
           file = File(copiedFile.path);
           debugPrint('[Upload] File copied successfully: $fileName');
         } on FileSystemException catch (e) {
           debugPrint('[Upload] FileSystemException when copying $fileName: $e');
           debugPrint('[Upload] Error code: ${e.osError?.errorCode}');
-          
+
           // Check for OS Error 32 (File is locked)
           if (e.osError?.errorCode == 32) {
             if (mounted) {
@@ -195,7 +203,7 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
             // Abort adding this book - don't add broken entry
             continue;
           }
-          
+
           // Other file system errors
           if (mounted) {
             showCustomToast(
@@ -346,8 +354,8 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                   children: [
                     Text(
                       'Tải sách lên',
-                      style: GoogleFonts.getFont(
-                        widget.fontTheme.serifFont,
+                      style: TextStyle(
+                        fontFamily: widget.fontTheme.serifFont,
                         fontSize: 32,
                         fontWeight: FontWeight.w600,
                         color: textColor,
@@ -356,8 +364,8 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                     const SizedBox(height: 8),
                     Text(
                       'Hỗ trợ PDF và EPUB',
-                      style: GoogleFonts.getFont(
-                        widget.fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: widget.fontTheme.sansFont,
                         fontSize: 14,
                         color: textLight,
                       ),
@@ -408,72 +416,72 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                     onEnter: (_) => setState(() => _isDragging = true),
                     onExit: (_) => setState(() => _isDragging = false),
                     child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(48),
-                    decoration: BoxDecoration(
-                      color: _isDragOver
-                          ? textColor.withOpacity(0.05)
-                          : backgroundColor,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(48),
+                      decoration: BoxDecoration(
                         color: _isDragOver
-                            ? textColor
-                            : (_isDragging
-                                  ? textColor.withOpacity(0.6)
-                                  : borderColor.withOpacity(0.5)),
-                        width: _isDragOver ? 3 : 2,
-                        style: BorderStyle.solid,
-                        strokeAlign: BorderSide.strokeAlignInside,
+                            ? textColor.withOpacity(0.05)
+                            : backgroundColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _isDragOver
+                              ? textColor
+                              : (_isDragging
+                                    ? textColor.withOpacity(0.6)
+                                    : borderColor.withOpacity(0.5)),
+                          width: _isDragOver ? 3 : 2,
+                          style: BorderStyle.solid,
+                          strokeAlign: BorderSide.strokeAlignInside,
+                        ),
                       ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Upload Icon
-                        Container(
-                          width: 80,
-                          height: 80,
-                          decoration: BoxDecoration(
-                            color: textColor.withOpacity(0.1),
-                            shape: BoxShape.circle,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Upload Icon
+                          Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: textColor.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              LucideIcons.upload,
+                              size: 40,
+                              color: textColor,
+                            ),
                           ),
-                          child: Icon(
-                            LucideIcons.upload,
-                            size: 40,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 24),
 
-                        // Main text
-                        Text(
-                          _selectedFiles.isEmpty
-                              ? 'Kéo thả file vào đây'
-                              : '${_selectedFiles.length} file đã chọn',
-                          style: GoogleFonts.getFont(
-                            widget.fontTheme.sansFont,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: textColor,
+                          // Main text
+                          Text(
+                            _selectedFiles.isEmpty
+                                ? 'Kéo thả file vào đây'
+                                : '${_selectedFiles.length} file đã chọn',
+                            style: TextStyle(
+                              fontFamily: widget.fontTheme.sansFont,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
+                          const SizedBox(height: 8),
 
-                        // Sub text
-                        Text(
-                          'hoặc nhấn để chọn từ thiết bị',
-                          style: GoogleFonts.getFont(
-                            widget.fontTheme.sansFont,
-                            fontSize: 14,
-                            color: textLight,
+                          // Sub text
+                          Text(
+                            'hoặc nhấn để chọn từ thiết bị',
+                            style: TextStyle(
+                              fontFamily: widget.fontTheme.sansFont,
+                              fontSize: 14,
+                              color: textLight,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
             ),
 
             // Selected files list (if any)
@@ -502,8 +510,8 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                           Expanded(
                             child: Text(
                               fileName,
-                              style: GoogleFonts.getFont(
-                                widget.fontTheme.sansFont,
+                              style: TextStyle(
+                                fontFamily: widget.fontTheme.sansFont,
                                 fontSize: 12,
                                 color: textColor,
                               ),
@@ -537,8 +545,8 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                     ),
                     child: Text(
                       'Hủy',
-                      style: GoogleFonts.getFont(
-                        widget.fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: widget.fontTheme.sansFont,
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -583,8 +591,8 @@ class _UploadBookModalState extends ConsumerState<UploadBookModal> {
                               const SizedBox(width: 8),
                               Text(
                                 'Xác nhận',
-                                style: GoogleFonts.getFont(
-                                  widget.fontTheme.sansFont,
+                                style: TextStyle(
+                                  fontFamily: widget.fontTheme.sansFont,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),

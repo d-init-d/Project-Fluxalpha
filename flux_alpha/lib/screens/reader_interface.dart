@@ -476,7 +476,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                           }
                           
                           // Apply line-height directly in CSS
-                          styles['line-height'] = '${lineHeight}';
+                          styles['line-height'] = '$lineHeight';
                           
                           // Apply font-size directly in CSS for immediate updates
                           styles['font-size'] = '${fontSize}px';

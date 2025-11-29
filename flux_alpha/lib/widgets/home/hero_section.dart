@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../models/book.dart';
 import '../../models/color_theme.dart';
@@ -46,8 +46,7 @@ class HeroSection extends StatelessWidget {
             children: [
               RichText(
                 text: TextSpan(
-                  style: GoogleFonts.getFont(
-                    fontTheme.serifFont,
+                  style: TextStyle(fontFamily: fontTheme.serifFont,
                     fontSize: 48,
                     height: 1.2,
                     color: theme.textColor,
@@ -63,8 +62,7 @@ class HeroSection extends StatelessWidget {
               const SizedBox(height: 24),
               Text(
                 subtitle,
-                style: GoogleFonts.getFont(
-                  fontTheme.sansFont,
+                style: TextStyle(fontFamily: fontTheme.sansFont,
                   fontSize: 16,
                   color: theme.textLight,
                   height: 1.6,
@@ -227,8 +225,7 @@ class _Build3DBook extends StatelessWidget {
                     children: [
                       Text(
                         displayAuthor,
-                        style: GoogleFonts.getFont(
-                          fontTheme.serifFont,
+                        style: TextStyle(fontFamily: fontTheme.serifFont,
                           color: Colors.white70,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -237,8 +234,7 @@ class _Build3DBook extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         displayTitle,
-                        style: GoogleFonts.getFont(
-                          fontTheme.serifFont,
+                        style: TextStyle(fontFamily: fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -273,8 +269,7 @@ class _Build3DBook extends StatelessWidget {
                           children: [
                             Text(
                               AppLocalizations.of(context)!.progress,
-                              style: GoogleFonts.getFont(
-                                fontTheme.sansFont,
+                              style: TextStyle(fontFamily: fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -282,8 +277,7 @@ class _Build3DBook extends StatelessWidget {
                             ),
                             Text(
                               progressText,
-                              style: GoogleFonts.getFont(
-                                fontTheme.sansFont,
+                              style: TextStyle(fontFamily: fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -308,8 +302,7 @@ class _Build3DBook extends StatelessWidget {
                         const SizedBox(height: 6),
                         Text(
                           lastReadText,
-                          style: GoogleFonts.getFont(
-                            fontTheme.sansFont,
+                          style: TextStyle(fontFamily: fontTheme.sansFont,
                             fontSize: 10,
                             color: overlaySecondary,
                           ),
@@ -377,3 +370,5 @@ class _Build3DBook extends StatelessWidget {
     );
   }
 }
+
+

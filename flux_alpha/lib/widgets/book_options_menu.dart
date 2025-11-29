@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/color_theme.dart';
@@ -93,8 +92,8 @@ class BookOptionsMenu extends ConsumerWidget {
             leading: Icon(LucideIcons.edit, color: textColor, size: 20),
             title: Text(
               'Sửa thông tin sách',
-              style: GoogleFonts.getFont(
-                fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: fontTheme.sansFont,
                 fontSize: 16,
                 color: textColor,
               ),
@@ -114,8 +113,8 @@ class BookOptionsMenu extends ConsumerWidget {
             ),
             title: Text(
               book.isRead ? 'Đánh dấu chưa đọc' : 'Đánh dấu đã đọc',
-              style: GoogleFonts.getFont(
-                fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: fontTheme.sansFont,
                 fontSize: 16,
                 color: textColor,
               ),
@@ -138,8 +137,8 @@ class BookOptionsMenu extends ConsumerWidget {
             leading: Icon(LucideIcons.trash2, color: Colors.red, size: 20),
             title: Text(
               'Xóa sách',
-              style: GoogleFonts.getFont(
-                fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: fontTheme.sansFont,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.red,

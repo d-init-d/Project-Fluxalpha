@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/color_theme.dart';
 import '../models/font_theme.dart';
 
@@ -192,8 +191,8 @@ class _ReadingSettingsModalState extends State<ReadingSettingsModal> {
   Widget _buildSectionLabel(String text) {
     return Text(
       text,
-      style: GoogleFonts.getFont(
-        widget.activeFont.sansFont,
+      style: TextStyle(
+        fontFamily: widget.activeFont.sansFont,
         fontSize: 12,
         fontWeight: FontWeight.w600,
         color: _textLight,
@@ -282,8 +281,8 @@ class _ReadingSettingsModalState extends State<ReadingSettingsModal> {
           child: Center(
             child: Text(
               label,
-              style: GoogleFonts.getFont(
-                widget.activeFont.sansFont,
+              style: TextStyle(
+                fontFamily: widget.activeFont.sansFont,
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 color: isSelected ? _primaryColor : _textColor,

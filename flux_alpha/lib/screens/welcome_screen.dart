@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:file_picker/file_picker.dart';
 import '../services/storage_service.dart';
@@ -49,12 +48,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       // Set the library path and create subdirectories
       debugPrint('[Welcome] Setting library path via StorageService...');
       final storageService = StorageService();
-      
+
       try {
         await storageService.setLibraryPath(selectedDirectory);
 
         if (!mounted) {
-          debugPrint('[Welcome] Context no longer mounted after setLibraryPath');
+          debugPrint(
+            '[Welcome] Context no longer mounted after setLibraryPath',
+          );
           return;
         }
 
@@ -62,7 +63,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       } catch (e, stackTrace) {
         debugPrint('[Welcome] Exception in setLibraryPath: $e');
         debugPrint('[Welcome] Stack trace: $stackTrace');
-        
+
         if (!mounted) {
           debugPrint('[Welcome] Context no longer mounted after error');
           return;
@@ -76,11 +77,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           errorMessage = 'Lỗi không mong muốn: ${e.toString()}';
         }
 
-        showCustomToast(
-          context,
-          errorMessage,
-          isError: true,
-        );
+        showCustomToast(context, errorMessage, isError: true);
         setState(() {
           _isLoading = false;
         });
@@ -99,7 +96,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     } catch (e, stackTrace) {
       debugPrint('[Welcome] CRITICAL ERROR in _pickFolder: $e');
       debugPrint('[Welcome] Stack trace: $stackTrace');
-      
+
       if (mounted) {
         showCustomToast(
           context,
@@ -122,9 +119,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final textColor = isDarkMode
         ? const Color(0xFFE3DAC9)
         : const Color(0xFF2D3748);
-    final textLight = isDarkMode
-        ? Colors.grey[400]!
-        : Colors.grey[600]!;
+    final textLight = isDarkMode ? Colors.grey[400]! : Colors.grey[600]!;
     final accentColor = isDarkMode
         ? const Color(0xFF059669)
         : const Color(0xFF043222);
@@ -159,8 +154,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 // Welcome Text
                 Text(
                   'Chào mừng đến với Flux Alpha',
-                  style: GoogleFonts.getFont(
-                    'Playfair Display',
+                  style: TextStyle(
+                    fontFamily: 'MySerif',
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
                     color: textColor,
@@ -172,8 +167,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 // Description Text
                 Text(
                   'Vui lòng chọn thư mục để lưu trữ sách của bạn',
-                  style: GoogleFonts.getFont(
-                    'Manrope',
+                  style: TextStyle(
+                    fontFamily: 'MySans',
                     fontSize: 18,
                     color: textLight,
                   ),
@@ -218,8 +213,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               const SizedBox(width: 12),
                               Text(
                                 'Chọn thư mục',
-                                style: GoogleFonts.getFont(
-                                  'Manrope',
+                                style: const TextStyle(
+                                  fontFamily: 'MySans',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -243,17 +238,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        LucideIcons.info,
-                        size: 20,
-                        color: textLight,
-                      ),
+                      Icon(LucideIcons.info, size: 20, color: textLight),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
                           'Thư mục bạn chọn sẽ chứa sách và bìa sách của bạn. Bạn có thể chọn bất kỳ thư mục nào trên máy tính.',
-                          style: GoogleFonts.getFont(
-                            'Manrope',
+                          style: TextStyle(
+                            fontFamily: 'MySans',
                             fontSize: 14,
                             color: textLight,
                           ),
@@ -270,4 +261,3 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 }
-

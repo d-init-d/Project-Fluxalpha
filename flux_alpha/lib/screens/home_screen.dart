@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:flux_alpha/screens/library_screen.dart';
@@ -251,8 +250,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Center(
                   child: Text(
                     'F',
-                    style: GoogleFonts.getFont(
-                      _fontTheme.serifFont,
+                    style: TextStyle(fontFamily: _fontTheme.serifFont,
                       color: _theme.cardBackground,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -266,8 +264,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Text(
                     AppLocalizations.of(context)!.greeting,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 10,
                       color: _theme.textLight,
                       fontWeight: FontWeight.w600,
@@ -276,8 +273,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   Text(
                     'Minh Nhật',
-                    style: GoogleFonts.getFont(
-                      _fontTheme.serifFont,
+                    style: TextStyle(fontFamily: _fontTheme.serifFont,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: _theme.textColor,
@@ -490,8 +486,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 10,
                     color: _theme.textLight,
                   ),
@@ -499,8 +494,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -555,8 +549,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context)!.add_goal,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -587,8 +580,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               RichText(
                 text: TextSpan(
-                  style: GoogleFonts.getFont(
-                    _fontTheme.serifFont,
+                  style: TextStyle(fontFamily: _fontTheme.serifFont,
                     fontSize: 48,
                     height: 1.2,
                     color: _theme.textColor,
@@ -604,8 +596,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 24),
               Text(
                 subtitle,
-                style: GoogleFonts.getFont(
-                  _fontTheme.sansFont,
+                style: TextStyle(fontFamily: _fontTheme.sansFont,
                   fontSize: 16,
                   color: _theme.textLight,
                   height: 1.6,
@@ -745,8 +736,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         displayAuthor,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.serifFont,
+                        style: TextStyle(fontFamily: _fontTheme.serifFont,
                           color: Colors.white70,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -755,8 +745,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 6),
                       Text(
                         displayTitle,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.serifFont,
+                        style: TextStyle(fontFamily: _fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -791,8 +780,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             Text(
                               AppLocalizations.of(context)!.progress,
-                              style: GoogleFonts.getFont(
-                                _fontTheme.sansFont,
+                              style: TextStyle(fontFamily: _fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -800,8 +788,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             Text(
                               progressText,
-                              style: GoogleFonts.getFont(
-                                _fontTheme.sansFont,
+                              style: TextStyle(fontFamily: _fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -826,8 +813,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 6),
                         Text(
                           lastReadText,
-                          style: GoogleFonts.getFont(
-                            _fontTheme.sansFont,
+                          style: TextStyle(fontFamily: _fontTheme.sansFont,
                             fontSize: 10,
                             color: overlaySecondary,
                           ),
@@ -908,8 +894,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.recently_read,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.serifFont,
+                  style: TextStyle(fontFamily: _fontTheme.serifFont,
                     fontSize: 32,
                     fontWeight: FontWeight.w600,
                     color: _theme.textColor,
@@ -918,8 +903,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   AppLocalizations.of(context)!.continue_journey,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     color: _theme.textLight,
                   ),
@@ -1015,8 +999,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         book.title,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.serifFont,
+                        style: TextStyle(fontFamily: _fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1027,8 +1010,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         book.author,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           color: Colors.white70,
                           fontSize: 12,
                         ),
@@ -1092,8 +1074,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 8),
                   Text(
                     AppLocalizations.of(context)!.explore_more,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _theme.textColor.withValues(alpha: 0.5),
@@ -1102,8 +1083,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     AppLocalizations.of(context)!.open_library,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 10,
                       color: _theme.textColor.withValues(alpha: 0.3),
                     ),
@@ -1157,8 +1137,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 AppLocalizations.of(context)!.reading_schedule,
-                style: GoogleFonts.getFont(
-                  _fontTheme.serifFont,
+                style: TextStyle(fontFamily: _fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -1185,8 +1164,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       days[index],
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: isActive
@@ -1197,8 +1175,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '${11 + index}',
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: isActive ? _theme.cardBackground : textColor,
@@ -1250,8 +1227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.todays_goal,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontWeight: FontWeight.bold,
                           color: textColor,
                         ),
@@ -1259,8 +1235,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         AppLocalizations.of(context)!.goal_msg,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           color: _theme.textLight,
                           height: 1.4,
@@ -1300,8 +1275,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 AppLocalizations.of(context)!.notes_highlight,
-                style: GoogleFonts.getFont(
-                  _fontTheme.serifFont,
+                style: TextStyle(fontFamily: _fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -1348,8 +1322,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Text(
                     AppLocalizations.of(context)!.stats,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.serifFont,
+                    style: TextStyle(fontFamily: _fontTheme.serifFont,
                       fontSize: 32,
                       fontWeight: FontWeight.w600,
                       color: textColor,
@@ -1358,8 +1331,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     AppLocalizations.of(context)!.reading_habit,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       color: _theme.textLight,
                     ),
@@ -1455,8 +1427,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.activity_week,
-                      style: GoogleFonts.getFont(
-                        _fontTheme.serifFont,
+                      style: TextStyle(fontFamily: _fontTheme.serifFont,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: textColor,
@@ -1473,8 +1444,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Text(
                         AppLocalizations.of(context)!.this_week,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: _theme.textLight,
@@ -1486,8 +1456,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Tổng: ${_statsService.weeklyTotalMinutes ~/ 60}h ${_statsService.weeklyTotalMinutes % 60} phút đọc',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 13,
                     color: _theme.textLight,
                   ),
@@ -1546,8 +1515,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.achievements,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.serifFont,
+                  style: TextStyle(fontFamily: _fontTheme.serifFont,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -1627,8 +1595,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     'HOT',
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.yellow[800],
@@ -1642,8 +1609,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 value,
-                style: GoogleFonts.getFont(
-                  _fontTheme.serifFont,
+                style: TextStyle(fontFamily: _fontTheme.serifFont,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1652,8 +1618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 4),
               Text(
                 label.toUpperCase(),
-                style: GoogleFonts.getFont(
-                  _fontTheme.sansFont,
+                style: TextStyle(fontFamily: _fontTheme.sansFont,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   color: _theme.textLight,
@@ -1697,8 +1662,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 8),
           Text(
             day,
-            style: GoogleFonts.getFont(
-              _fontTheme.sansFont,
+            style: TextStyle(fontFamily: _fontTheme.sansFont,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: _theme.textLight,
@@ -1744,8 +1708,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 title,
-                style: GoogleFonts.getFont(
-                  _fontTheme.sansFont,
+                style: TextStyle(fontFamily: _fontTheme.sansFont,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1754,8 +1717,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: GoogleFonts.getFont(
-                  _fontTheme.sansFont,
+                style: TextStyle(fontFamily: _fontTheme.sansFont,
                   fontSize: 12,
                   color: _theme.textLight,
                 ),
@@ -1782,8 +1744,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(width: 16),
         Text(
           '$currentValue/$targetValue',
-          style: GoogleFonts.getFont(
-            _fontTheme.sansFont,
+          style: TextStyle(fontFamily: _fontTheme.sansFont,
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: isCompleted ? _theme.highlight : _theme.textLight,
@@ -1823,8 +1784,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   'Hôm nay',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.white.withValues(alpha: 0.7),
@@ -1837,8 +1797,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       _statsService.getFormattedTodayTime(),
-                      style: GoogleFonts.getFont(
-                        _fontTheme.serifFont,
+                      style: TextStyle(fontFamily: _fontTheme.serifFont,
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1850,8 +1809,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
                         _statsService.todayReadingMinutes >= 60 ? '' : 'phút',
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 16,
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
@@ -1879,8 +1837,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 12),
                     Text(
                       '${(_statsService.dailyProgress * 100).clamp(0, 100).toInt()}%',
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1893,8 +1850,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _statsService.dailyProgress >= 1.0
                       ? '🎉 Đã đạt mục tiêu ${_statsService.dailyGoalMinutes} phút/ngày!'
                       : 'Còn ${_statsService.getRemainingMinutesToGoal()} phút nữa để đạt mục tiêu ${_statsService.dailyGoalMinutes} phút/ngày',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -1935,8 +1891,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       '${_statsService.todayReadingMinutes}/${_statsService.dailyGoalMinutes}',
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1972,8 +1927,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 'Mục tiêu tháng này',
-                style: GoogleFonts.getFont(
-                  _fontTheme.serifFont,
+                style: TextStyle(fontFamily: _fontTheme.serifFont,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1990,8 +1944,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: Text(
                   'Tháng ${DateTime.now().month}',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: _theme.highlight,
@@ -2062,8 +2015,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: GoogleFonts.getFont(
-              _fontTheme.serifFont,
+            style: TextStyle(fontFamily: _fontTheme.serifFont,
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -2072,8 +2024,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: GoogleFonts.getFont(
-              _fontTheme.sansFont,
+            style: TextStyle(fontFamily: _fontTheme.sansFont,
               fontSize: 12,
               color: _theme.textLight,
             ),
@@ -2140,8 +2091,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.saved,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.serifFont,
+                        style: TextStyle(fontFamily: _fontTheme.serifFont,
                           fontSize: 32,
                           fontWeight: FontWeight.w600,
                           color: textColor,
@@ -2150,8 +2100,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '$totalSaved mục đã lưu',
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 14,
                           color: _theme.textLight,
                         ),
@@ -2267,8 +2216,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: GoogleFonts.getFont(
-                  _fontTheme.sansFont,
+                style: TextStyle(fontFamily: _fontTheme.sansFont,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isSelected
@@ -2306,8 +2254,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: GoogleFonts.getFont(
-              _fontTheme.sansFont,
+            style: TextStyle(fontFamily: _fontTheme.sansFont,
               fontSize: 14,
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -2340,8 +2287,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Đánh dấu trang',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2381,8 +2327,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         bookmark.bookTitle,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.serifFont,
+                        style: TextStyle(fontFamily: _fontTheme.serifFont,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: textColor,
@@ -2391,8 +2336,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${bookmark.chapterLabel} • ${bookmark.formattedProgress}',
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           color: _theme.textLight,
                         ),
@@ -2405,8 +2349,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       _formatSavedDate(bookmark.createdAt),
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2454,8 +2397,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Highlight',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2489,8 +2431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       highlight.bookTitle,
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _theme.textLight,
@@ -2500,8 +2441,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const Spacer(),
                     Text(
                       _formatSavedDate(highlight.createdAt),
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2520,8 +2460,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     '"${highlight.selectedText}"',
-                    style: GoogleFonts.getFont(
-                      _fontTheme.serifFont,
+                    style: TextStyle(fontFamily: _fontTheme.serifFont,
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
                       color: textColor,
@@ -2560,8 +2499,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Ghi chú',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2592,8 +2530,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       note.bookTitle,
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _theme.textLight,
@@ -2603,8 +2540,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const Spacer(),
                     Text(
                       _formatSavedDate(note.createdAt),
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2614,8 +2550,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 12),
                 Text(
                   '"${note.selectedText}"',
-                  style: GoogleFonts.getFont(
-                    _fontTheme.serifFont,
+                  style: TextStyle(fontFamily: _fontTheme.serifFont,
                     fontSize: 13,
                     fontStyle: FontStyle.italic,
                     color: _theme.textLight,
@@ -2644,8 +2579,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: Text(
                           note.content,
-                          style: GoogleFonts.getFont(
-                            _fontTheme.sansFont,
+                          style: TextStyle(fontFamily: _fontTheme.sansFont,
                             fontSize: 13,
                             color: textColor,
                             height: 1.4,
@@ -2782,8 +2716,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: isActive
                       ? Text(
                           label,
-                          style: GoogleFonts.getFont(
-                            _fontTheme.sansFont,
+                          style: TextStyle(fontFamily: _fontTheme.sansFont,
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
                             color: _darkMode ? Colors.black : Colors.white,
@@ -2839,8 +2772,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           Text(
                             AppLocalizations.of(context)!.notifications,
-                            style: GoogleFonts.getFont(
-                              _fontTheme.serifFont,
+                            style: TextStyle(fontFamily: _fontTheme.serifFont,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: _theme.textColor,
@@ -2934,8 +2866,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Expanded(
                       child: Text(
                         title,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: _theme.textColor,
@@ -2956,8 +2887,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     color: _theme.textLight,
                     height: 1.4,
@@ -2966,8 +2896,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: GoogleFonts.getFont(
-                    _fontTheme.sansFont,
+                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                     fontSize: 10,
                     color: _theme.textLight.withValues(alpha: 0.6),
                   ),
@@ -3009,8 +2938,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 8),
                       Text(
                         AppLocalizations.of(context)!.settings,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: textColor,
@@ -3043,8 +2971,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 6),
                       Text(
                         AppLocalizations.of(context)!.dark_mode,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: textLight,
@@ -3078,8 +3005,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               Text(
                                 AppLocalizations.of(context)!.turn_on_at,
-                                style: GoogleFonts.getFont(
-                                  _fontTheme.sansFont,
+                                style: TextStyle(fontFamily: _fontTheme.sansFont,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: textLight,
@@ -3107,8 +3033,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   child: Text(
                                     _darkModeStartTime.format(context),
-                                    style: GoogleFonts.getFont(
-                                      _fontTheme.sansFont,
+                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                                       fontSize: 14,
                                       color: textColor,
                                     ),
@@ -3125,8 +3050,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               Text(
                                 AppLocalizations.of(context)!.turn_off_at,
-                                style: GoogleFonts.getFont(
-                                  _fontTheme.sansFont,
+                                style: TextStyle(fontFamily: _fontTheme.sansFont,
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
                                   color: textLight,
@@ -3154,8 +3078,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   ),
                                   child: Text(
                                     _darkModeEndTime.format(context),
-                                    style: GoogleFonts.getFont(
-                                      _fontTheme.sansFont,
+                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                                       fontSize: 14,
                                       color: textColor,
                                     ),
@@ -3178,8 +3101,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 6),
                       Text(
                         AppLocalizations.of(context)!.language,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: textLight,
@@ -3225,8 +3147,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: Center(
                               child: Text(
                                 AppLocalizations.of(context)!.vietnamese,
-                                style: GoogleFonts.getFont(
-                                  _fontTheme.sansFont,
+                                style: TextStyle(fontFamily: _fontTheme.sansFont,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: textColor,
@@ -3271,8 +3192,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             child: Center(
                               child: Text(
                                 AppLocalizations.of(context)!.english,
-                                style: GoogleFonts.getFont(
-                                  _fontTheme.sansFont,
+                                style: TextStyle(fontFamily: _fontTheme.sansFont,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w500,
                                   color: textColor,
@@ -3293,8 +3213,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 6),
                       Text(
                         AppLocalizations.of(context)!.appearance,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: textLight,
@@ -3308,8 +3227,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // Color Theme Selector
                   Text(
                     AppLocalizations.of(context)!.main_color,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: textColor,
@@ -3398,8 +3316,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Expanded(
                                   child: Text(
                                     localizedName,
-                                    style: GoogleFonts.getFont(
-                                      _fontTheme.sansFont,
+                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                                       fontSize: 12,
                                       fontWeight: FontWeight.bold,
                                       color: textColor,
@@ -3420,8 +3337,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   // Font Theme Selector
                   Text(
                     AppLocalizations.of(context)!.font_style,
-                    style: GoogleFonts.getFont(
-                      _fontTheme.sansFont,
+                    style: TextStyle(fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: textColor,
@@ -3507,8 +3423,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   children: [
                                     Text(
                                       localizedName,
-                                      style: GoogleFonts.getFont(
-                                        theme.serifFont,
+                                      style: TextStyle(fontFamily: theme.serifFont,
                                         fontSize: 14,
                                         color: textColor,
                                       ),
@@ -3516,8 +3431,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     const SizedBox(height: 2),
                                     Text(
                                       localizedDesc,
-                                      style: GoogleFonts.getFont(
-                                        theme.sansFont,
+                                      style: TextStyle(fontFamily: theme.sansFont,
                                         fontSize: 10,
                                         color: textLight,
                                       ),
@@ -3550,8 +3464,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 6),
                       Text(
                         'Lưu trữ',
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: textLight,
@@ -3577,8 +3490,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             Text(
                               'Vị trí hiện tại',
-                              style: GoogleFonts.getFont(
-                                _fontTheme.sansFont,
+                              style: TextStyle(fontFamily: _fontTheme.sansFont,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: textLight,
@@ -3590,8 +3502,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Text(
                           StorageService().rootLibraryPath ??
                               'Chưa được thiết lập',
-                          style: GoogleFonts.getFont(
-                            _fontTheme.sansFont,
+                          style: TextStyle(fontFamily: _fontTheme.sansFont,
                             fontSize: 12,
                             color: textColor,
                           ),
@@ -3630,8 +3541,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 const SizedBox(width: 8),
                                 Text(
                                   'Thay đổi thư mục',
-                                  style: GoogleFonts.getFont(
-                                    _fontTheme.sansFont,
+                                  style: TextStyle(fontFamily: _fontTheme.sansFont,
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
                                     color: _theme.accentBg,
@@ -3654,8 +3564,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(width: 6),
                       Text(
                         AppLocalizations.of(context)!.account,
-                        style: GoogleFonts.getFont(
-                          _fontTheme.sansFont,
+                        style: TextStyle(fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
                           color: textLight,
@@ -3674,8 +3583,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.profile,
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: textColor.withValues(alpha: 0.5),
@@ -3692,8 +3600,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     child: Text(
                       AppLocalizations.of(context)!.security,
-                      style: GoogleFonts.getFont(
-                        _fontTheme.sansFont,
+                      style: TextStyle(fontFamily: _fontTheme.sansFont,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: textColor.withValues(alpha: 0.5),
@@ -3722,8 +3629,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.getFont(
-            _fontTheme.sansFont,
+          style: TextStyle(fontFamily: _fontTheme.sansFont,
             fontSize: 14,
             fontWeight: FontWeight.w500,
             color: textColor,
@@ -3827,8 +3733,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           Text(
                             'Minh Nhật',
-                            style: GoogleFonts.getFont(
-                              _fontTheme.sansFont,
+                            style: TextStyle(fontFamily: _fontTheme.sansFont,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: textColor,
@@ -3836,8 +3741,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           Text(
                             'minhnhat@flux.io',
-                            style: GoogleFonts.getFont(
-                              _fontTheme.sansFont,
+                            style: TextStyle(fontFamily: _fontTheme.sansFont,
                               fontSize: 12,
                               color: _theme.textLight,
                             ),
@@ -3908,8 +3812,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(width: 12),
             Text(
               label,
-              style: GoogleFonts.getFont(
-                _fontTheme.sansFont,
+              style: TextStyle(fontFamily: _fontTheme.sansFont,
                 fontSize: 14,
                 color: textColor,
               ),
@@ -3933,8 +3836,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Xác nhận thay đổi',
-          style: GoogleFonts.getFont(
-            _fontTheme.serifFont,
+          style: TextStyle(fontFamily: _fontTheme.serifFont,
             fontSize: 20,
             fontWeight: FontWeight.w600,
             color: textColor,
@@ -3942,8 +3844,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         content: Text(
           'Bạn có chắc muốn đổi thư mục không? App sẽ khởi động lại quy trình chọn thư mục.',
-          style: GoogleFonts.getFont(
-            _fontTheme.sansFont,
+          style: TextStyle(fontFamily: _fontTheme.sansFont,
             fontSize: 14,
             color: textColor,
           ),
@@ -3953,8 +3854,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onPressed: () => Navigator.of(context).pop(),
             child: Text(
               'Hủy',
-              style: GoogleFonts.getFont(
-                _fontTheme.sansFont,
+              style: TextStyle(fontFamily: _fontTheme.sansFont,
                 fontSize: 14,
                 color: textLight,
               ),
@@ -3974,8 +3874,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             child: Text(
               'Xác nhận',
-              style: GoogleFonts.getFont(
-                _fontTheme.sansFont,
+              style: TextStyle(fontFamily: _fontTheme.sansFont,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -4009,7 +3908,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SnackBar(
             content: Text(
               'Lỗi khi thay đổi thư mục: $e',
-              style: GoogleFonts.getFont(_fontTheme.sansFont, fontSize: 14),
+              style: TextStyle(fontFamily: _fontTheme.sansFont, fontSize: 14),
             ),
             backgroundColor: Colors.red,
           ),
@@ -4018,3 +3917,5 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 }
+
+

@@ -3,6 +3,7 @@ class FontThemeModel {
   final String name;
   final String serifFont;
   final String sansFont;
+  final String monoFont;
   final String description;
 
   const FontThemeModel({
@@ -10,6 +11,7 @@ class FontThemeModel {
     required this.name,
     required this.serifFont,
     required this.sansFont,
+    required this.monoFont,
     required this.description,
   });
 }
@@ -34,6 +36,9 @@ class AppFonts {
   // --- TẠP CHÍ ---
   static const String boldSerif = 'Bitter';
   static const String boldSans = 'Work Sans';
+
+  // --- MONOSPACE ---
+  static const String monoFont = 'JetBrains Mono';
 }
 
 // Font Themes Configuration (Ported from React)
@@ -43,6 +48,7 @@ class FontThemes {
     name: 'Mặc định',
     serifFont: AppFonts.defaultSerif,
     sansFont: AppFonts.defaultSans,
+    monoFont: AppFonts.monoFont,
     description: 'Sang trọng & Hiện đại',
   );
 
@@ -51,6 +57,7 @@ class FontThemes {
     name: 'Đương đại',
     serifFont: AppFonts.contemporarySerif,
     sansFont: AppFonts.contemporarySans,
+    monoFont: AppFonts.monoFont,
     description: 'Báo chí & Sắc sảo',
   );
 
@@ -59,6 +66,7 @@ class FontThemes {
     name: 'Cổ điển',
     serifFont: AppFonts.vintageSerif,
     sansFont: AppFonts.vintageSans,
+    monoFont: AppFonts.monoFont,
     description: 'Thơ mộng & Hoài cổ',
   );
 
@@ -67,6 +75,7 @@ class FontThemes {
     name: 'Học thuật',
     serifFont: AppFonts.academicSerif,
     sansFont: AppFonts.academicSans,
+    monoFont: AppFonts.monoFont,
     description: 'Nghiêm túc & Dễ đọc',
   );
 
@@ -75,6 +84,7 @@ class FontThemes {
     name: 'Tạp chí',
     serifFont: AppFonts.boldSerif,
     sansFont: AppFonts.boldSans,
+    monoFont: AppFonts.monoFont,
     description: 'Mạnh mẽ & Ấn tượng',
   );
 

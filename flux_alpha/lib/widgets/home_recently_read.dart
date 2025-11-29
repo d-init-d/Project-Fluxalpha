@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/book.dart';
 import '../models/color_theme.dart';
@@ -36,8 +36,7 @@ class RecentlyReadSection extends ConsumerWidget {
               children: [
                 Text(
                   AppLocalizations.of(context)!.recently_read,
-                  style: GoogleFonts.getFont(
-                    fontTheme.serifFont,
+                  style: TextStyle(fontFamily: fontTheme.serifFont,
                     fontSize: 32,
                     fontWeight: FontWeight.w600,
                     color: theme.textColor,
@@ -46,8 +45,7 @@ class RecentlyReadSection extends ConsumerWidget {
                 const SizedBox(height: 4),
                 Text(
                   AppLocalizations.of(context)!.continue_journey,
-                  style: GoogleFonts.getFont(
-                    fontTheme.sansFont,
+                  style: TextStyle(fontFamily: fontTheme.sansFont,
                     fontSize: 14,
                     color: theme.textLight,
                   ),
@@ -161,8 +159,7 @@ class _BookCard extends ConsumerWidget {
                     children: [
                       Text(
                         book.title,
-                        style: GoogleFonts.getFont(
-                          fontTheme.serifFont,
+                        style: TextStyle(fontFamily: fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -173,8 +170,7 @@ class _BookCard extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         book.author,
-                        style: GoogleFonts.getFont(
-                          fontTheme.sansFont,
+                        style: TextStyle(fontFamily: fontTheme.sansFont,
                           color: Colors.white70,
                           fontSize: 11,
                         ),
@@ -252,8 +248,7 @@ class _AddMoreCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 Text(
                   'Thêm sách',
-                  style: GoogleFonts.getFont(
-                    fontTheme.sansFont,
+                  style: TextStyle(fontFamily: fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: theme.textColor,
@@ -268,3 +263,5 @@ class _AddMoreCard extends StatelessWidget {
     );
   }
 }
+
+

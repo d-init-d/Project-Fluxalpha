@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/color_theme.dart';
@@ -101,8 +101,7 @@ class _EditBookMetadataModalState
             children: [
               Text(
                 'Chỉnh sửa thông tin sách',
-                style: GoogleFonts.getFont(
-                  widget.fontTheme.serifFont,
+                style: TextStyle(fontFamily: widget.fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -119,8 +118,7 @@ class _EditBookMetadataModalState
           // Title field
           Text(
             'Tiêu đề',
-            style: GoogleFonts.getFont(
-              widget.fontTheme.sansFont,
+            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: textColor,
@@ -129,8 +127,7 @@ class _EditBookMetadataModalState
           const SizedBox(height: 8),
           TextField(
             controller: _titleController,
-            style: GoogleFonts.getFont(
-              widget.fontTheme.sansFont,
+            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
               fontSize: 16,
               color: textColor,
             ),
@@ -160,8 +157,7 @@ class _EditBookMetadataModalState
           // Author field
           Text(
             'Tác giả',
-            style: GoogleFonts.getFont(
-              widget.fontTheme.sansFont,
+            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
               fontSize: 14,
               fontWeight: FontWeight.w600,
               color: textColor,
@@ -170,8 +166,7 @@ class _EditBookMetadataModalState
           const SizedBox(height: 8),
           TextField(
             controller: _authorController,
-            style: GoogleFonts.getFont(
-              widget.fontTheme.sansFont,
+            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
               fontSize: 16,
               color: textColor,
             ),
@@ -219,8 +214,7 @@ class _EditBookMetadataModalState
                   const SizedBox(width: 8),
                   Text(
                     'Lưu',
-                    style: GoogleFonts.getFont(
-                      widget.fontTheme.sansFont,
+                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -234,4 +228,5 @@ class _EditBookMetadataModalState
     );
   }
 }
+
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import 'package:lucide_icons/lucide_icons.dart';
 import '../models/color_theme.dart';
 import '../models/font_theme.dart';
@@ -147,8 +147,7 @@ class _QuickStatCard extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: GoogleFonts.getFont(
-                    fontTheme.sansFont,
+                  style: TextStyle(fontFamily: fontTheme.sansFont,
                     fontSize: 10,
                     color: theme.textLight,
                   ),
@@ -156,8 +155,7 @@ class _QuickStatCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: GoogleFonts.getFont(
-                    fontTheme.sansFont,
+                  style: TextStyle(fontFamily: fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -221,8 +219,7 @@ class _AddGoalCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context)!.add_goal,
-                  style: GoogleFonts.getFont(
-                    fontTheme.sansFont,
+                  style: TextStyle(fontFamily: fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -236,3 +233,5 @@ class _AddGoalCard extends StatelessWidget {
     );
   }
 }
+
+
