@@ -211,12 +211,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   void _preloadFonts() {
     // Trigger font loading by creating TextStyles
     // MySerif (Playfair Display)
-    const TextStyle(fontFamily: 'MySerif', fontSize: 18);
-    const TextStyle(fontFamily: 'MySerif', fontSize: 18, fontWeight: FontWeight.bold);
+    const TextStyle(fontFamily: 'Playfair Display', fontSize: 18);
+    const TextStyle(fontFamily: 'Playfair Display', fontSize: 18, fontWeight: FontWeight.bold);
     
     // MySans (Manrope)
-    const TextStyle(fontFamily: 'MySans', fontSize: 18);
-    const TextStyle(fontFamily: 'MySans', fontSize: 18, fontWeight: FontWeight.bold);
+    const TextStyle(fontFamily: 'Manrope', fontSize: 18);
+    const TextStyle(fontFamily: 'Manrope', fontSize: 18, fontWeight: FontWeight.bold);
   }
 
   @override
@@ -771,7 +771,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                     Text(
                       label,
                       style: TextStyle(
-                        fontFamily: 'MySans',
+                        fontFamily: 'Manrope',
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         color: color,
@@ -807,11 +807,11 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   String _getFontFamilyName(String fontFamily) {
     switch (fontFamily) {
       case 'sans':
-        return 'MySans';
+        return 'Manrope';
       case 'mono':
-        return 'monospace'; // Fallback to system monospace
+        return 'JetBrains Mono';
       default:
-        return 'MySerif';
+        return 'Playfair Display';
     }
   }
 
@@ -832,7 +832,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     switch (family) {
       case 'sans':
         return TextStyle(
-          fontFamily: 'MySans',
+          fontFamily: 'Manrope',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -840,9 +840,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           fontWeight: fontWeight,
         );
       case 'mono':
-        // Fallback to system monospace if JetBrains Mono not available
         return TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'JetBrains Mono',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -851,7 +850,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         );
       default:
         return TextStyle(
-          fontFamily: 'MySerif',
+          fontFamily: 'Playfair Display',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -1112,7 +1111,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                           Text(
                             'Mục lục',
                             style: TextStyle(
-                              fontFamily: 'MySerif',
+                              fontFamily: 'Playfair Display',
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: theme.text,
@@ -1169,7 +1168,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                   Text(
                                     'CHƯƠNG ${index + 1}',
                                     style: TextStyle(
-                                      fontFamily: 'MySans',
+                                      fontFamily: 'Manrope',
                                       fontSize: 10,
                                       color: theme.textSecondary,
                                     ),
@@ -1178,7 +1177,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                                   Text(
                                     title,
                                     style: TextStyle(
-                                      fontFamily: 'MySerif',
+                                      fontFamily: 'Playfair Display',
                                       fontSize: 16,
                                       fontWeight: isActive
                                           ? FontWeight.bold
@@ -1259,7 +1258,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                       Text(
                         'ĐANG ĐỌC',
                         style: TextStyle(
-                          fontFamily: 'MySans',
+                          fontFamily: 'Manrope',
                           fontSize: 10,
                           letterSpacing: 2,
                           fontWeight: FontWeight.bold,
@@ -1271,7 +1270,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          fontFamily: 'MySerif',
+                          fontFamily: 'Playfair Display',
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: theme.text,
@@ -1340,7 +1339,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                   controller: _searchController,
                   autofocus: _showSearch,
                   style: TextStyle(
-                    fontFamily: 'MySans',
+                    fontFamily: 'Manrope',
                     fontSize: 16,
                     color: theme.text,
                   ),
@@ -1361,7 +1360,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 child: Text(
                   'Hủy',
                   style: TextStyle(
-                    fontFamily: 'MySans',
+                    fontFamily: 'Manrope',
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: const Color(0xFF3B82F6),
@@ -1401,7 +1400,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                 Text(
                   'Chương trước',
                   style: TextStyle(
-                    fontFamily: 'MySans',
+                    fontFamily: 'Manrope',
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
                     color: theme.text,
@@ -1435,7 +1434,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                   Text(
                     'Chương tiếp theo',
                     style: TextStyle(
-                      fontFamily: 'MySans',
+                      fontFamily: 'Manrope',
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
                       color: theme.buttonText,
@@ -1522,7 +1521,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             child: Text(
                               'Aa',
                               style: TextStyle(
-                                fontFamily: 'MySerif',
+                                fontFamily: 'Playfair Display',
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: _showAppearanceMenu
@@ -1539,7 +1538,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             Text(
                               'CHƯƠNG ${_currentChapterIndex + 1}/${widget.chapters.isEmpty ? 18 : widget.chapters.length}',
                               style: TextStyle(
-                                fontFamily: 'MySans',
+                                fontFamily: 'Manrope',
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
                                 letterSpacing: 1,
@@ -1550,7 +1549,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                             Text(
                               'Còn khoảng $_estimatedMinutes phút đọc',
                               style: TextStyle(
-                                fontFamily: 'MySans',
+                                fontFamily: 'Manrope',
                                 fontSize: 10,
                                 color: theme.textSecondary,
                               ),
@@ -1596,7 +1595,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             Text(
               '0%',
               style: TextStyle(
-                fontFamily: 'MySans',
+                fontFamily: 'Manrope',
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: theme.iconActive.withValues(alpha: 0.7),
@@ -1654,7 +1653,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             Text(
               '100%',
               style: TextStyle(
-                fontFamily: 'MySans',
+                fontFamily: 'Manrope',
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
                 color: theme.iconActive.withValues(alpha: 0.7),
@@ -1864,7 +1863,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     return Text(
       text,
       style: TextStyle(
-        fontFamily: 'MySans',
+        fontFamily: 'Manrope',
         fontSize: 10,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
@@ -1940,7 +1939,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
               child: Text(
                 label,
                 style: TextStyle(
-                  fontFamily: 'MySans',
+                  fontFamily: 'Manrope',
                   fontSize: 12,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   color: isSelected
@@ -2249,7 +2248,7 @@ class _NoteDialogState extends State<_NoteDialog> {
                 Text(
                   'Ghi chú',
                   style: TextStyle(
-                    fontFamily: 'MySerif',
+                    fontFamily: 'Playfair Display',
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: widget.theme.text,
@@ -2272,7 +2271,7 @@ class _NoteDialogState extends State<_NoteDialog> {
               child: Text(
                 '"${widget.selectedText}"',
                 style: TextStyle(
-                  fontFamily: 'MySans',
+                  fontFamily: 'Manrope',
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
                   color: widget.theme.textSecondary,
@@ -2286,7 +2285,7 @@ class _NoteDialogState extends State<_NoteDialog> {
               autofocus: true,
               maxLines: 5,
               style: TextStyle(
-                fontFamily: 'MySans',
+                fontFamily: 'Manrope',
                 fontSize: 16,
                 color: widget.theme.text,
               ),
@@ -2323,7 +2322,7 @@ class _NoteDialogState extends State<_NoteDialog> {
                   child: Text(
                     'Hủy',
                     style: TextStyle(
-                      fontFamily: 'MySans',
+                      fontFamily: 'Manrope',
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: widget.theme.textSecondary,
@@ -2353,7 +2352,7 @@ class _NoteDialogState extends State<_NoteDialog> {
                   child: Text(
                     'Lưu',
                     style: TextStyle(
-                      fontFamily: 'MySans',
+                      fontFamily: 'Manrope',
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),

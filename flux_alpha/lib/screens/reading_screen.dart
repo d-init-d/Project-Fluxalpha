@@ -239,13 +239,13 @@ class _ReadingScreenState extends State<ReadingScreen>
     TextStyle baseStyle;
     switch (fontFamily) {
       case FontType.sans:
-        baseStyle = const TextStyle(fontFamily: 'MySans');
+        baseStyle = const TextStyle(fontFamily: 'Manrope');
         break;
       case FontType.mono:
-        baseStyle = const TextStyle(fontFamily: 'monospace');
+        baseStyle = const TextStyle(fontFamily: 'JetBrains Mono');
         break;
       default:
-        baseStyle = const TextStyle(fontFamily: 'MySerif');
+        baseStyle = const TextStyle(fontFamily: 'Playfair Display');
     }
     return baseStyle.copyWith(
       fontSize: fontSize,
@@ -342,7 +342,7 @@ class _ReadingScreenState extends State<ReadingScreen>
               const SizedBox(height: 40),
               Text(
                 'CHƯƠNG 1',
-                style: TextStyle(fontFamily: 'MySans',
+                style: TextStyle(fontFamily: 'Manrope',
                   fontSize: 10,
                   fontWeight: FontWeight.bold,
                   letterSpacing: 3,
@@ -353,7 +353,7 @@ class _ReadingScreenState extends State<ReadingScreen>
               Text(
                 'Khởi đầu',
                 style: TextStyle(
-                  fontFamily: 'MySerif',
+                  fontFamily: 'Playfair Display',
                   fontSize: 48,
                   fontWeight: FontWeight.bold,
                   color: currentTheme.text,
@@ -449,7 +449,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                       Text(
                         'Mục lục',
                         style: TextStyle(
-                          fontFamily: 'MySerif',
+                          fontFamily: 'Playfair Display',
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: currentTheme.text,
@@ -486,7 +486,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                               children: [
                                 Text(
                                   'CHƯƠNG $chapter',
-                                  style: TextStyle(fontFamily: 'MySans',
+                                  style: TextStyle(fontFamily: 'Manrope',
                                     fontSize: 10,
                                     letterSpacing: 1,
                                     color: currentTheme.textSecondary,
@@ -498,7 +498,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                                       ? 'Khởi đầu'
                                       : 'Hành trình $chapter',
                                   style: TextStyle(
-                                    fontFamily: 'MySerif',
+                                    fontFamily: 'Playfair Display',
                                     fontSize: 16,
                                     fontWeight:
                                         isActive ? FontWeight.bold : FontWeight.normal,
@@ -565,7 +565,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                   children: [
                     Text(
                       'ĐANG ĐỌC',
-                      style: TextStyle(fontFamily: 'MySans',
+                      style: TextStyle(fontFamily: 'Manrope',
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                         letterSpacing: 2,
@@ -576,7 +576,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                     Text(
                       'Nhà Giả Kim',
                       style: TextStyle(
-                        fontFamily: 'MySerif',
+                        fontFamily: 'Playfair Display',
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: currentTheme.text,
@@ -901,7 +901,7 @@ class _ReadingScreenState extends State<ReadingScreen>
   Widget _buildSectionLabel(String text) {
     return Text(
       text.toUpperCase(),
-      style: TextStyle(fontFamily: 'MySans',
+      style: TextStyle(fontFamily: 'Manrope',
         fontSize: 10,
         fontWeight: FontWeight.bold,
         letterSpacing: 1,
@@ -949,7 +949,7 @@ class _ReadingScreenState extends State<ReadingScreen>
                 child: Center(
                   child: Text(
                     option.$2,
-                    style: TextStyle(fontFamily: 'MySans',
+                    style: TextStyle(fontFamily: 'Manrope',
                       fontSize: 12,
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
@@ -1134,7 +1134,7 @@ class _ReadingScreenState extends State<ReadingScreen>
       children: [
         Text(
           '0%',
-          style: TextStyle(fontFamily: 'MySans',
+          style: TextStyle(fontFamily: 'Manrope',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: currentTheme.iconActive.withOpacity(0.7),
@@ -1217,7 +1217,7 @@ class _ReadingScreenState extends State<ReadingScreen>
         const SizedBox(width: 16),
         Text(
           '100%',
-          style: TextStyle(fontFamily: 'MySans',
+          style: TextStyle(fontFamily: 'Manrope',
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: currentTheme.iconActive.withOpacity(0.7),
@@ -1246,7 +1246,7 @@ class _ReadingScreenState extends State<ReadingScreen>
             child: Text(
               'Aa',
               style: TextStyle(
-                fontFamily: 'MySerif',
+                fontFamily: 'Playfair Display',
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: showAppearanceMenu
@@ -1263,7 +1263,7 @@ class _ReadingScreenState extends State<ReadingScreen>
           children: [
             Text(
               'CHƯƠNG 1/18',
-              style: TextStyle(fontFamily: 'MySans',
+              style: TextStyle(fontFamily: 'Manrope',
                 fontSize: 11,
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
@@ -1273,7 +1273,7 @@ class _ReadingScreenState extends State<ReadingScreen>
             const SizedBox(height: 2),
             Text(
               'Còn khoảng 5 phút đọc',
-              style: TextStyle(fontFamily: 'MySans',
+              style: TextStyle(fontFamily: 'Manrope',
                 fontSize: 10,
                 color: currentTheme.textSecondary,
               ),

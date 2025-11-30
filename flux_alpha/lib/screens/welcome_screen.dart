@@ -155,7 +155,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 Text(
                   'Chào mừng đến với Flux Alpha',
                   style: TextStyle(
-                    fontFamily: 'MySerif',
+                    fontFamily: 'Playfair Display',
                     fontSize: 36,
                     fontWeight: FontWeight.w700,
                     color: textColor,
@@ -168,7 +168,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 Text(
                   'Vui lòng chọn thư mục để lưu trữ sách của bạn',
                   style: TextStyle(
-                    fontFamily: 'MySans',
+                    fontFamily: 'Manrope',
                     fontSize: 18,
                     color: textLight,
                   ),
@@ -214,7 +214,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               Text(
                                 'Chọn thư mục',
                                 style: const TextStyle(
-                                  fontFamily: 'MySans',
+                                  fontFamily: 'Manrope',
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -244,7 +244,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         child: Text(
                           'Thư mục bạn chọn sẽ chứa sách và bìa sách của bạn. Bạn có thể chọn bất kỳ thư mục nào trên máy tính.',
                           style: TextStyle(
-                            fontFamily: 'MySans',
+                            fontFamily: 'Manrope',
                             fontSize: 14,
                             color: textLight,
                           ),
