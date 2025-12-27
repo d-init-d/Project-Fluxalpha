@@ -171,6 +171,18 @@ class BookListNotifier extends StateNotifier<List<Book>> {
     _saveBooks();
   }
 
+  // Toggle favorite status
+  Future<void> toggleFavorite(String id) async {
+    state = [
+      for (final book in state)
+        if (book.id == id)
+          book.copyWith(isFavorite: !book.isFavorite)
+        else
+          book,
+    ];
+    _saveBooks();
+  }
+
   // Delete a book by id and its local files
   Future<void> deleteBook(String id) async {
     debugPrint('[Delete] Attempting to delete book with id: $id');
@@ -288,10 +300,16 @@ final mostRecentlyReadBookProvider = Provider<Book?>((ref) {
       .where((book) => book.progress > 0 && book.progress < 1.0)
       .toList();
 
-  final candidates =
-      readingBooks.isNotEmpty ? readingBooks : List<Book>.from(books);
+  final candidates = readingBooks.isNotEmpty
+      ? readingBooks
+      : List<Book>.from(books);
   if (candidates.isEmpty) return null;
 
   candidates.sort((a, b) => b.lastRead.compareTo(a.lastRead));
   return candidates.first;
+});
+
+final favoriteBooksProvider = Provider<List<Book>>((ref) {
+  final books = ref.watch(bookListProvider);
+  return books.where((book) => book.isFavorite).toList();
 });

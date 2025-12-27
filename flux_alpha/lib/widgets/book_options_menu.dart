@@ -6,7 +6,7 @@ import '../models/font_theme.dart';
 import '../models/book.dart';
 import '../providers/book_provider.dart';
 import '../utils/toast_helper.dart';
-import 'edit_book_metadata_modal.dart';
+import 'book_metadata_modal.dart';
 
 class BookOptionsMenu extends ConsumerWidget {
   final Book book;
@@ -24,15 +24,9 @@ class BookOptionsMenu extends ConsumerWidget {
 
   void _handleEditInfo(BuildContext context) {
     Navigator.of(context).pop(); // Close options menu
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => EditBookMetadataModal(
-        book: book,
-        theme: theme,
-        fontTheme: fontTheme,
-        isDarkMode: isDarkMode,
-      ),
+      builder: (context) => BookMetadataModal(book: book),
     );
   }
 
@@ -47,6 +41,26 @@ class BookOptionsMenu extends ConsumerWidget {
         showCustomToast(
           context,
           book.isRead ? 'Đã đánh dấu chưa đọc' : 'Đã đánh dấu đã đọc',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showCustomToast(context, 'Lỗi khi cập nhật: $e', isError: true);
+      }
+    }
+  }
+
+  Future<void> _handleToggleFavorite(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    try {
+      await ref.read(bookListProvider.notifier).toggleFavorite(book.id);
+      if (context.mounted) {
+        Navigator.of(context).pop(); // Close options menu
+        showCustomToast(
+          context,
+          book.isFavorite ? 'Đã xóa khỏi yêu thích' : 'Đã thêm vào yêu thích',
         );
       }
     } catch (e) {
@@ -82,7 +96,7 @@ class BookOptionsMenu extends ConsumerWidget {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: textLight.withOpacity(0.3),
+              color: textLight.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -126,8 +140,29 @@ class BookOptionsMenu extends ConsumerWidget {
             ),
           ),
 
+          ListTile(
+            leading: Icon(
+              book.isFavorite ? LucideIcons.heartOff : LucideIcons.heart,
+              color: textColor,
+              size: 20,
+            ),
+            title: Text(
+              book.isFavorite ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích',
+              style: TextStyle(
+                fontFamily: fontTheme.sansFont,
+                fontSize: 16,
+                color: textColor,
+              ),
+            ),
+            onTap: () => _handleToggleFavorite(context, ref),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 8,
+            ),
+          ),
+
           Divider(
-            color: borderColor.withOpacity(0.5),
+            color: borderColor.withValues(alpha: 0.5),
             height: 1,
             indent: 24,
             endIndent: 24,

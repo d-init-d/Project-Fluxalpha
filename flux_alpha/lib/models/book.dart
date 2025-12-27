@@ -14,6 +14,7 @@ class Book {
   final String category;
   final DateTime lastRead;
   final bool isRead; // Whether the book has been marked as read
+  final bool isFavorite; // Whether the book is marked as favorite
 
   const Book({
     required this.id,
@@ -29,6 +30,7 @@ class Book {
     this.category = 'Uncategorized',
     DateTime? lastRead,
     this.isRead = false,
+    this.isFavorite = false,
   }) : lastRead = lastRead ?? uploadDate;
 
   // JSON serialization
@@ -47,6 +49,7 @@ class Book {
       'category': category,
       'lastRead': lastRead.toIso8601String(),
       'isRead': isRead,
+      'isFavorite': isFavorite,
     };
   }
 
@@ -67,6 +70,7 @@ class Book {
           ? DateTime.parse(json['lastRead'] as String)
           : DateTime.parse(json['uploadDate'] as String),
       isRead: json['isRead'] as bool? ?? false,
+      isFavorite: json['isFavorite'] as bool? ?? false,
     );
   }
 
@@ -85,6 +89,7 @@ class Book {
     String? category,
     DateTime? lastRead,
     bool? isRead,
+    bool? isFavorite,
   }) {
     return Book(
       id: id ?? this.id,
@@ -100,7 +105,7 @@ class Book {
       category: category ?? this.category,
       lastRead: lastRead ?? this.lastRead,
       isRead: isRead ?? this.isRead,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }
-

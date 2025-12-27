@@ -79,6 +79,10 @@ dependencies:
 
   # UUID - For generating unique IDs
   uuid: ^4.5.1
+  package_info_plus: ^9.0.0
+  
+  # URL launcher - For opening external links in About section
+  url_launcher: ^6.3.1
 
 dev_dependencies:
   flutter_test:
@@ -119,6 +123,37 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
+    # Font aliases for reader interface
+    - family: MySerif
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Regular.ttf
+        - asset: assets/fonts/PlayfairDisplay-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlayfairDisplay-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/PlayfairDisplay-Italic.ttf
+          style: italic
+        - asset: assets/fonts/PlayfairDisplay-BoldItalic.ttf
+          weight: 700
+          style: italic
+    - family: MySans
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
+    - family: MyMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono-Regular.ttf
+        - asset: assets/fonts/JetBrainsMono-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/JetBrainsMono-Bold.ttf
+          weight: 700
+    
+    # Original font families (kept for backward compatibility)
     - family: Playfair Display
       fonts:
         - asset: assets/fonts/PlayfairDisplay-Regular.ttf

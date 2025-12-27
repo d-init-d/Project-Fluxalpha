@@ -98,7 +98,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             children: [
               Text(
                 'Thư viện của tôi',
-                style: TextStyle(fontFamily: widget.fontTheme.serifFont,
+                style: TextStyle(
+                  fontFamily: widget.fontTheme.serifFont,
                   fontSize: 42,
                   fontWeight: FontWeight.w500,
                   color: textColor,
@@ -138,7 +139,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   .length;
               return Text(
                 '$totalBooks cuốn sách • $currentlyReading đang đọc',
-                style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: widget.fontTheme.sansFont,
                   fontSize: 14,
                   color: textLight,
                 ),
@@ -179,7 +181,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               const SizedBox(height: 16),
                               Text(
                                 'Chưa có sách nào',
-                                style: TextStyle(fontFamily: widget.fontTheme.serifFont,
+                                style: TextStyle(
+                                  fontFamily: widget.fontTheme.serifFont,
                                   fontSize: 20,
                                   color: textColor,
                                 ),
@@ -187,7 +190,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 'Nhấn nút + để thêm sách mới',
-                                style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+                                style: TextStyle(
+                                  fontFamily: widget.fontTheme.sansFont,
                                   fontSize: 14,
                                   color: textLight,
                                 ),
@@ -272,15 +276,18 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     ),
                   ),
                   child: Text(
-                  category,
-                  style: TextStyle(fontFamily: widget.fontTheme.sansFont,
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                    color: isSelected ? textColor : widget.theme.textLight,
+                    category,
+                    style: TextStyle(
+                      fontFamily: widget.fontTheme.sansFont,
+                      fontSize: 14,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
+                      color: isSelected ? textColor : widget.theme.textLight,
+                    ),
                   ),
                 ),
               ),
-            ),
             );
           }).toList(),
         ),
@@ -307,7 +314,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   Text(
                     'Sắp xếp: Tên A-Z',
-                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: widget.fontTheme.sansFont,
                       fontSize: 12,
                       color: textColor,
                     ),
@@ -333,8 +341,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       case 'Đã đọc xong':
         return allBooks.where((book) => book.isRead).toList();
       case 'Yêu thích':
-        // TODO: Add favorite functionality
-        return [];
+        return allBooks.where((book) => book.isFavorite).toList();
       default:
         return allBooks;
     }
@@ -353,6 +360,24 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               Container(
                 decoration: BoxDecoration(color: Colors.black.withOpacity(0.3)),
               ),
+            // Favorite badge
+            if (book.isFavorite)
+              Positioned(
+                top: 8,
+                left: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.5),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    LucideIcons.heart,
+                    color: Colors.redAccent,
+                    size: 14,
+                  ),
+                ),
+              ),
             // Status badge for completed books
             if (book.progress >= 1.0)
               Positioned(
@@ -369,7 +394,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   ),
                   child: Text(
                     'XONG',
-                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: widget.fontTheme.sansFont,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -389,7 +415,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                 children: [
                   Text(
                     book.title,
-                    style: TextStyle(fontFamily: widget.fontTheme.serifFont,
+                    style: TextStyle(
+                      fontFamily: widget.fontTheme.serifFont,
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: textColor,
@@ -400,7 +427,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   const SizedBox(height: 4),
                   Text(
                     book.author,
-                    style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: widget.fontTheme.sansFont,
                       fontSize: 12,
                       color: textLight,
                     ),
@@ -428,9 +456,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           child: LinearProgressIndicator(
             value: book.progress,
             backgroundColor: textColor.withOpacity(0.1),
-            valueColor: AlwaysStoppedAnimation<Color>(
-              widget.theme.highlight,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(widget.theme.highlight),
             minHeight: 4,
           ),
         ),
@@ -467,7 +493,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(
           'Xóa sách',
-          style: TextStyle(fontFamily: widget.fontTheme.serifFont,
+          style: TextStyle(
+            fontFamily: widget.fontTheme.serifFont,
             fontSize: 20,
             fontWeight: FontWeight.bold,
             color: widget.isDarkMode
@@ -477,7 +504,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ),
         content: Text(
           'Bạn có chắc muốn xóa sách này không?',
-          style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+          style: TextStyle(
+            fontFamily: widget.fontTheme.sansFont,
             fontSize: 16,
             color: widget.isDarkMode
                 ? Colors.grey[400]
@@ -489,7 +517,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             onPressed: () => Navigator.of(context).pop(false),
             child: Text(
               'Hủy',
-              style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: widget.fontTheme.sansFont,
                 fontSize: 16,
                 color: widget.isDarkMode
                     ? Colors.grey[400]
@@ -502,7 +531,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: Text(
               'Đồng ý',
-              style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: widget.fontTheme.sansFont,
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
                 color: Colors.red,
@@ -624,7 +654,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: 12),
           Text(
             collection['title'],
-            style: TextStyle(fontFamily: widget.fontTheme.serifFont,
+            style: TextStyle(
+              fontFamily: widget.fontTheme.serifFont,
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -635,7 +666,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           const SizedBox(height: 4),
           Text(
             '${collection['count']} cuốn sách',
-            style: TextStyle(fontFamily: widget.fontTheme.sansFont,
+            style: TextStyle(
+              fontFamily: widget.fontTheme.sansFont,
               fontSize: 12,
               color: textLight,
             ),
@@ -645,4 +677,3 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
     );
   }
 }
-

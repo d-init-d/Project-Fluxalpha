@@ -3,11 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:html/parser.dart' as html_parser;
+import 'package:html/dom.dart' as dom;
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/chapter_data.dart';
 import '../models/annotation.dart';
+import '../services/reading_stats_service.dart';
 
 // --- Theme Configurations ---
 class ReaderTheme {
@@ -147,9 +149,15 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   // --- Style State (using ValueNotifier for optimized rebuilds) ---
   final ValueNotifier<double> _fontSizeNotifier = ValueNotifier<double>(18);
   final ValueNotifier<double> _lineHeightNotifier = ValueNotifier<double>(1.8);
-  final ValueNotifier<String> _wordSpacingNotifier = ValueNotifier<String>('normal');
-  final ValueNotifier<String> _fontFamilyNotifier = ValueNotifier<String>('serif');
-  final ValueNotifier<String> _themeModeNotifier = ValueNotifier<String>('paper');
+  final ValueNotifier<String> _wordSpacingNotifier = ValueNotifier<String>(
+    'normal',
+  );
+  final ValueNotifier<String> _fontFamilyNotifier = ValueNotifier<String>(
+    'serif',
+  );
+  final ValueNotifier<String> _themeModeNotifier = ValueNotifier<String>(
+    'paper',
+  );
   final ValueNotifier<double> _progressNotifier = ValueNotifier<double>(0);
 
   // --- States ---
@@ -170,6 +178,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
   late int _currentChapterIndex;
   _RenderedChapter? _renderedChapter;
+  int? _selectedParagraphIndex; // Track which paragraph is selected
 
   final TextEditingController _searchController = TextEditingController();
 
@@ -205,6 +214,9 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
     // Preload all fonts immediately for instant switching
     _preloadFonts();
+
+    // Start reading session
+    ReadingStatsService().startReading();
   }
 
   /// Preload all fonts to ensure instant switching
@@ -212,11 +224,27 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     // Trigger font loading by creating TextStyles
     // MySerif (Playfair Display)
     const TextStyle(fontFamily: 'MySerif', fontSize: 18);
-    const TextStyle(fontFamily: 'MySerif', fontSize: 18, fontWeight: FontWeight.bold);
-    
+    const TextStyle(
+      fontFamily: 'MySerif',
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    );
+
     // MySans (Manrope)
     const TextStyle(fontFamily: 'MySans', fontSize: 18);
-    const TextStyle(fontFamily: 'MySans', fontSize: 18, fontWeight: FontWeight.bold);
+    const TextStyle(
+      fontFamily: 'MySans',
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    );
+
+    // MyMono (JetBrains Mono)
+    const TextStyle(fontFamily: 'MyMono', fontSize: 18);
+    const TextStyle(
+      fontFamily: 'MyMono',
+      fontSize: 18,
+      fontWeight: FontWeight.bold,
+    );
   }
 
   @override
@@ -241,6 +269,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     _fontFamilyNotifier.dispose();
     _themeModeNotifier.dispose();
     _progressNotifier.dispose();
+    ReadingStatsService().stopReading();
     super.dispose();
   }
 
@@ -323,43 +352,66 @@ class _ReaderInterfaceState extends State<ReaderInterface>
   /// Splits HTML content into individual paragraphs for lazy rendering
   List<String> _splitIntoParagraphs(String html) {
     if (html.trim().isEmpty) return ['<p></p>'];
-    
+
     final document = html_parser.parse(html);
     final body = document.body;
     if (body == null) return [html];
-    
+
     final paragraphs = <String>[];
-    
-    // Extract all paragraph elements and other block-level elements
-    final elements = body.children;
-    
-    for (final element in elements) {
-      final tagName = element.localName?.toLowerCase() ?? '';
-      
-      // Handle paragraph tags
-      if (tagName == 'p') {
-        final paragraphHtml = element.outerHtml;
-        if (paragraphHtml.trim().isNotEmpty) {
-          paragraphs.add(paragraphHtml);
+
+    // Use nodes to capture both Elements and Text nodes
+    final nodes = body.nodes;
+
+    for (final node in nodes) {
+      if (node is dom.Element) {
+        final element = node;
+        final tagName = element.localName?.toLowerCase() ?? '';
+
+        // Handle paragraph tags
+        if (tagName == 'p') {
+          final paragraphHtml = element.outerHtml;
+          if (paragraphHtml.trim().isNotEmpty) {
+            paragraphs.add(paragraphHtml);
+          }
         }
-      }
-      // Handle other block-level elements (div, h1-h6, etc.)
-      else if (['div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'pre'].contains(tagName)) {
-        final elementHtml = element.outerHtml;
-        if (elementHtml.trim().isNotEmpty) {
-          paragraphs.add(elementHtml);
+        // Handle other block-level elements (div, h1-h6, etc.)
+        else if ([
+          'div',
+          'h1',
+          'h2',
+          'h3',
+          'h4',
+          'h5',
+          'h6',
+          'blockquote',
+          'pre',
+        ].contains(tagName)) {
+          final elementHtml = element.outerHtml;
+          if (elementHtml.trim().isNotEmpty) {
+            paragraphs.add(elementHtml);
+          }
         }
-      }
-      // For other elements, wrap them in a paragraph
-      else if (element.text.trim().isNotEmpty) {
-        paragraphs.add('<p>${element.outerHtml}</p>');
+        // For other elements (span, etc), wrap them in a paragraph
+        else if (element.text.trim().isNotEmpty) {
+          paragraphs.add('<p>${element.outerHtml}</p>');
+        }
+      } else if (node.nodeType == dom.Node.TEXT_NODE) {
+        // Handle raw text nodes (often found between tags or at root)
+        final text = node.text?.trim() ?? '';
+        if (text.isNotEmpty) {
+          paragraphs.add('<p>$text</p>');
+        }
       }
     }
-    
+
     // If no paragraphs found, split by newlines or create a single paragraph
+    // This fallback is rarely needed if the node traversal above works well
     if (paragraphs.isEmpty) {
       // Fallback: try splitting by <p> tags using regex
-      final pMatches = RegExp(r'<p[^>]*>.*?</p>', dotAll: true).allMatches(html);
+      final pMatches = RegExp(
+        r'<p[^>]*>.*?</p>',
+        dotAll: true,
+      ).allMatches(html);
       if (pMatches.isNotEmpty) {
         for (final match in pMatches) {
           final paragraph = match.group(0) ?? '';
@@ -382,12 +434,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         }
       }
     }
-    
+
     // Ensure at least one paragraph
     if (paragraphs.isEmpty) {
       paragraphs.add('<p></p>');
     }
-    
+
     return paragraphs;
   }
 
@@ -419,10 +471,12 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         final wordSpacing = _wordSpacingNotifier.value;
         final fontFamily = _fontFamilyNotifier.value;
         final themeMode = _themeModeNotifier.value;
-        
+
         final currentTheme = ReaderTheme.getTheme(themeMode);
-        final wordSpacingValue = wordSpacing == 'wide' ? 2.0 : (wordSpacing == 'wider' ? 5.0 : 0.0);
-        
+        final wordSpacingValue = wordSpacing == 'wide'
+            ? 2.0
+            : (wordSpacing == 'wider' ? 5.0 : 0.0);
+
         // Create textStyle with current settings
         final textStyle = _getPreloadedTextStyle(
           fontSize: fontSize,
@@ -431,10 +485,10 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           color: currentTheme.text,
           fontFamily: fontFamily,
         );
-        
+
         // Get the actual font family name for customStylesBuilder
         final fontFamilyName = _getFontFamilyName(fontFamily);
-        
+
         // SliverList with virtualization - only renders visible items
         return SliverList(
           // CRITICAL: Disable automatic keep-alives to prevent memory bloat
@@ -442,7 +496,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             // Item builder - renders only the visible paragraph
             (context, index) {
               final paragraphHtml = _renderedChapter!.paragraphs[index];
-              
+
               // Wrap each paragraph in RepaintBoundary for isolated paint operations
               // Center and constrain to maxWidth for proper layout
               return Center(
@@ -451,46 +505,66 @@ class _ReaderInterfaceState extends State<ReaderInterface>
                   child: RepaintBoundary(
                     key: ValueKey('paragraph_${_currentChapterIndex}_$index'),
                     child: Padding(
-                      padding: const EdgeInsets.only(bottom: 24.0), // Paragraph spacing
-                      child: HtmlWidget(
-                        paragraphHtml,
-                        // Stable key per paragraph
-                        key: ValueKey('para_${_currentChapterIndex}_$index'),
-                        renderMode: RenderMode.column,
-                        // Direct textStyle injection for instant updates
-                        textStyle: textStyle,
-                        // Rebuild triggers for style changes
-                        rebuildTriggers: [fontSize, lineHeight, wordSpacingValue, fontFamily, themeMode],
-                        // Disable unnecessary features
-                        onTapUrl: null,
-                        onTapImage: null,
-                        customStylesBuilder: (element) {
-                          final styles = <String, String>{};
+                      padding: const EdgeInsets.only(
+                        bottom: 24.0,
+                      ), // Paragraph spacing
+                      child: SelectionArea(
+                        selectionControls: CustomTextSelectionControls(
+                          onSelectionChanged: (selection, text, position) =>
+                              _handleTextSelection(
+                                selection,
+                                text,
+                                position,
+                                index,
+                              ),
+                          theme: currentTheme,
+                        ),
+                        child: HtmlWidget(
+                          paragraphHtml,
+                          // Stable key per paragraph
+                          key: ValueKey('para_${_currentChapterIndex}_$index'),
+                          renderMode: RenderMode.column,
+                          // Direct textStyle injection for instant updates
+                          textStyle: textStyle,
+                          // Rebuild triggers for style changes
+                          rebuildTriggers: [
+                            fontSize,
+                            lineHeight,
+                            wordSpacingValue,
+                            fontFamily,
+                            themeMode,
+                          ],
+                          // Disable unnecessary features
+                          onTapUrl: null,
+                          onTapImage: null,
+                          customStylesBuilder: (element) {
+                            final styles = <String, String>{};
 
-                          // Apply font-family directly in CSS
-                          styles['font-family'] = fontFamilyName;
-                          
-                          // Apply word-spacing if needed
-                          if (wordSpacingValue > 0) {
-                            styles['word-spacing'] = '${wordSpacingValue}px';
-                          }
-                          
-                          // Apply line-height directly in CSS
-                          styles['line-height'] = '$lineHeight';
-                          
-                          // Apply font-size directly in CSS for immediate updates
-                          styles['font-size'] = '${fontSize}px';
+                            // Apply font-family directly in CSS
+                            styles['font-family'] = fontFamilyName;
 
-                          // Paragraph specific styles
-                          if (element.localName == 'p') {
-                            styles['margin'] = '0';
-                            styles['text-align'] = 'justify';
-                          } else {
-                            styles['text-align'] = 'justify';
-                          }
+                            // Apply word-spacing if needed
+                            if (wordSpacingValue > 0) {
+                              styles['word-spacing'] = '${wordSpacingValue}px';
+                            }
 
-                          return styles;
-                        },
+                            // Apply line-height directly in CSS
+                            styles['line-height'] = '$lineHeight';
+
+                            // Apply font-size directly in CSS for immediate updates
+                            styles['font-size'] = '${fontSize}px';
+
+                            // Paragraph specific styles
+                            if (element.localName == 'p') {
+                              styles['margin'] = '0';
+                              styles['text-align'] = 'justify';
+                            } else {
+                              styles['text-align'] = 'justify';
+                            }
+
+                            return styles;
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -522,14 +596,16 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     TextSelection selection,
     String selectedText,
     Offset? position,
+    int paragraphIndex,
   ) {
     print(
-      '_handleTextSelection called: selection=$selection, text="$selectedText", position=$position',
+      '_handleTextSelection called: selection=$selection, text="$selectedText", position=$position, index=$paragraphIndex',
     );
     if (selection.isValid && selectedText.trim().isNotEmpty) {
       setState(() {
         _currentSelection = selection;
         _selectedText = selectedText.trim();
+        _selectedParagraphIndex = paragraphIndex;
       });
       print('Showing menu for: "$_selectedText" at $position');
       _showSelectionMenu(position);
@@ -569,7 +645,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
 
     final highlight = Highlight(
       id: const Uuid().v4(),
-      paragraphIndex: 0, // TODO: Calculate actual paragraph index
+      paragraphIndex: _selectedParagraphIndex ?? 0,
       startOffset: _currentSelection!.start,
       endOffset: _currentSelection!.end,
       selectedText: _selectedText!,
@@ -607,7 +683,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
             id: const Uuid().v4(),
             content: noteContent,
             selectedText: _selectedText!,
-            paragraphIndex: 0, // TODO: Calculate actual paragraph index
+            paragraphIndex: _selectedParagraphIndex ?? 0,
             startOffset: _currentSelection!.start,
             endOffset: _currentSelection!.end,
             createdAt: DateTime.now(),
@@ -809,7 +885,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
       case 'sans':
         return 'MySans';
       case 'mono':
-        return 'monospace'; // Fallback to system monospace
+        return 'MyMono';
       default:
         return 'MySerif';
     }
@@ -828,7 +904,7 @@ class _ReaderInterfaceState extends State<ReaderInterface>
     final lineHeight = height ?? _lineHeight;
     final spacing = wordSpacing ?? _getWordSpacingValue();
     final family = fontFamily ?? _fontFamily;
-    
+
     switch (family) {
       case 'sans':
         return TextStyle(
@@ -840,9 +916,8 @@ class _ReaderInterfaceState extends State<ReaderInterface>
           fontWeight: fontWeight,
         );
       case 'mono':
-        // Fallback to system monospace if JetBrains Mono not available
         return TextStyle(
-          fontFamily: 'monospace',
+          fontFamily: 'MyMono',
           fontSize: size,
           height: lineHeight,
           wordSpacing: spacing,
@@ -874,175 +949,179 @@ class _ReaderInterfaceState extends State<ReaderInterface>
       valueListenable: _themeModeNotifier,
       builder: (context, themeMode, _) {
         final theme = ReaderTheme.getTheme(themeMode);
-        
+
         return Scaffold(
           backgroundColor: theme.bg,
           body: Stack(
-        children: [
-          // Main Content
-          GestureDetector(
-            onTap: _handleContentClick,
-            child: Container(
-              color: theme.bg,
-              child: SelectionArea(
-                selectionControls: CustomTextSelectionControls(
-                  onSelectionChanged: _handleTextSelection,
-                  theme: theme,
-                ),
-                child: CustomScrollView(
-                  controller: _scrollController,
-                  slivers: [
-                    // Padding and constraints wrapper
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 24,
-                        vertical: 80,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(
-                              maxWidth: 720,
-                            ), // max-w-2xl
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Chapter Header (React: text-center mb-16 pt-10)
-                                const SizedBox(height: 40),
-                                ValueListenableBuilder<String>(
-                                  valueListenable: _fontFamilyNotifier,
-                                  builder: (context, fontFamily, _) {
-                                    return Center(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            'CHƯƠNG ${_currentChapterIndex + 1}',
-                                            style: TextStyle(
-                                              fontFamily: _getFontFamilyName(fontFamily),
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              letterSpacing: 3, // tracking-[0.2em]
-                                              color: theme.textSecondary,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 16),
-                                          if (_renderedChapter != null)
+            children: [
+              // Main Content
+              GestureDetector(
+                onTap: _handleContentClick,
+                child: Container(
+                  color: theme.bg,
+                  child: CustomScrollView(
+                    controller: _scrollController,
+                    slivers: [
+                      // Padding and constraints wrapper
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 80,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                maxWidth: 720,
+                              ), // max-w-2xl
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Chapter Header (React: text-center mb-16 pt-10)
+                                  const SizedBox(height: 40),
+                                  ValueListenableBuilder<String>(
+                                    valueListenable: _fontFamilyNotifier,
+                                    builder: (context, fontFamily, _) {
+                                      return Center(
+                                        child: Column(
+                                          children: [
                                             Text(
-                                              _renderedChapter!.title,
-                                              textAlign: TextAlign.center,
+                                              'CHƯƠNG ${_currentChapterIndex + 1}',
                                               style: TextStyle(
-                                                fontFamily: _getFontFamilyName(fontFamily),
-                                                fontSize: 48, // text-5xl
+                                                fontFamily: _getFontFamilyName(
+                                                  fontFamily,
+                                                ),
+                                                fontSize: 12,
                                                 fontWeight: FontWeight.bold,
-                                                height: 1.2,
-                                                color: theme.text,
+                                                letterSpacing:
+                                                    3, // tracking-[0.2em]
+                                                color: theme.textSecondary,
                                               ),
                                             ),
-                                          const SizedBox(height: 32),
-                                          Container(
-                                            width: 64,
-                                            height: 1,
-                                            color: theme.text.withValues(alpha: 0.2),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                                const SizedBox(height: 32),
-                              ],
+                                            const SizedBox(height: 16),
+                                            if (_renderedChapter != null)
+                                              Text(
+                                                _renderedChapter!.title,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontFamily:
+                                                      _getFontFamilyName(
+                                                        fontFamily,
+                                                      ),
+                                                  fontSize: 48, // text-5xl
+                                                  fontWeight: FontWeight.bold,
+                                                  height: 1.2,
+                                                  color: theme.text,
+                                                ),
+                                              ),
+                                            const SizedBox(height: 32),
+                                            Container(
+                                              width: 64,
+                                              height: 1,
+                                              color: theme.text.withValues(
+                                                alpha: 0.2,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  const SizedBox(height: 32),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    
-                    // Virtualized Content - SliverList for paragraph-based rendering
-                    if (_renderedChapter == null)
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        sliver: SliverToBoxAdapter(
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 720),
-                              child: Container(
-                                padding: const EdgeInsets.all(24),
-                                decoration: BoxDecoration(
-                                  color: theme.panelBg,
-                                  borderRadius: BorderRadius.circular(24),
+
+                      // Virtualized Content - SliverList for paragraph-based rendering
+                      if (_renderedChapter == null)
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          sliver: SliverToBoxAdapter(
+                            child: Center(
+                              child: ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 720,
                                 ),
-                                child: Text(
-                                  'Không thể hiển thị nội dung.',
-                                  textAlign: TextAlign.center,
-                                  style: _getPreloadedTextStyle(
-                                    fontSize: 16,
-                                    color: theme.text,
+                                child: Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: theme.panelBg,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: Text(
+                                    'Không thể hiển thị nội dung.',
+                                    textAlign: TextAlign.center,
+                                    style: _getPreloadedTextStyle(
+                                      fontSize: 16,
+                                      color: theme.text,
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
                           ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.symmetric(horizontal: 0),
+                          sliver: _buildVirtualizedParagraphs(),
                         ),
-                      )
-                    else
-                      SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        sliver: _buildVirtualizedParagraphs(),
-                      ),
 
-                    // Chapter Navigation Buttons
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      sliver: SliverToBoxAdapter(
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 720),
-                            child: Column(
-                              children: [
-                                const SizedBox(height: 48),
-                                Container(
-                                  width: double.infinity,
-                                  height: 1,
-                                  color: theme.text.withValues(alpha: 0.15),
-                                ),
-                                const SizedBox(height: 32),
-                                _buildChapterNavigationButtons(theme),
-                                const SizedBox(height: 180),
-                              ],
+                      // Chapter Navigation Buttons
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        sliver: SliverToBoxAdapter(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 720),
+                              child: Column(
+                                children: [
+                                  const SizedBox(height: 48),
+                                  Container(
+                                    width: double.infinity,
+                                    height: 1,
+                                    color: theme.text.withValues(alpha: 0.15),
+                                  ),
+                                  const SizedBox(height: 32),
+                                  _buildChapterNavigationButtons(theme),
+                                  const SizedBox(height: 180),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+
+              // TOC Backdrop
+              if (_showTOC)
+                GestureDetector(
+                  onTap: () => setState(() => _showTOC = false),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    color: Colors.black.withValues(alpha: 0.5),
+                  ),
+                ),
+
+              // Table of Contents
+              _buildTableOfContents(theme),
+
+              // Top Bar
+              _buildTopBar(theme),
+
+              // Search Overlay
+              _buildSearchOverlay(theme),
+
+              // Bottom Control Panel
+              _buildBottomControls(theme),
+            ],
           ),
-
-          // TOC Backdrop
-          if (_showTOC)
-            GestureDetector(
-              onTap: () => setState(() => _showTOC = false),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                color: Colors.black.withValues(alpha: 0.5),
-              ),
-            ),
-
-          // Table of Contents
-          _buildTableOfContents(theme),
-
-          // Top Bar
-          _buildTopBar(theme),
-
-          // Search Overlay
-          _buildSearchOverlay(theme),
-
-          // Bottom Control Panel
-          _buildBottomControls(theme),
-        ],
-      ),
         );
       },
     );
@@ -1417,6 +1496,14 @@ class _ReaderInterfaceState extends State<ReaderInterface>
         if (hasNext)
           GestureDetector(
             onTap: () {
+              // Add pages read (heuristic: paragraphs / 5, at least 1)
+              final estPages = (_renderedChapter?.paragraphs.length ?? 0) ~/ 5;
+              ReadingStatsService().addPagesRead(estPages > 0 ? estPages : 1);
+
+              if (_currentChapterIndex == totalChapters - 1) {
+                ReadingStatsService().completeBook();
+              }
+
               setState(() {
                 _currentChapterIndex++;
                 _renderedChapter = _prepareChapter();

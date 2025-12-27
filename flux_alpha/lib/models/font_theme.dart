@@ -19,7 +19,7 @@ class FontThemeModel {
 class AppFonts {
   // --- MẶC ĐỊNH ---
   static const String defaultSerif = 'Playfair Display';
-  static const String defaultSans = 'Manrope';
+  static const String defaultSans = 'Inter';
 
   // --- ĐƯƠNG ĐẠI ---
   static const String contemporarySerif = 'Lora';

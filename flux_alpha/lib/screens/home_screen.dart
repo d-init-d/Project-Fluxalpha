@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:window_manager/window_manager.dart';
@@ -10,18 +11,21 @@ import '../models/color_theme.dart';
 import '../models/font_theme.dart';
 import '../models/saved_bookmark.dart';
 import '../providers/book_provider.dart';
-import '../providers/language_provider.dart';
+
 import '../l10n/app_localizations.dart';
 import '../services/reading_stats_service.dart';
 import '../services/saved_content_service.dart';
 import '../services/reading_position_service.dart';
-import '../services/storage_service.dart';
+
 import '../widgets/book_cover_widget.dart';
 import 'book_reader_screen.dart';
 import 'reader_interface.dart';
-import 'welcome_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/macos_sidebar.dart';
+
+import '../widgets/add_goal_modal.dart';
+import 'settings_screen.dart';
+import '../providers/theme_provider.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -35,15 +39,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _activeTab = 0;
   bool _showNotifications = false;
   bool _showProfileMenu = false;
+  bool _isSidebarExpanded = true;
 
-  // Settings Panel State
-  bool _darkMode = false;
-  bool _scheduleDarkMode = false;
-  String _currentColorTheme = 'forest';
-  String _currentFontTheme = 'default';
-  TimeOfDay _darkModeStartTime = const TimeOfDay(hour: 20, minute: 0);
+  // Theme Cache for Build
+  ColorThemeModel? _cachedTheme;
+  FontThemeModel? _cachedFontTheme;
 
-  TimeOfDay _darkModeEndTime = const TimeOfDay(hour: 7, minute: 0);
+  // Theme Accessors with Fallback
+  bool get _darkMode => ref.watch(themeProvider).isDarkMode;
+
+  ColorThemeModel get _theme => _cachedTheme ?? ref.read(colorThemeProvider);
+
+  FontThemeModel get _fontTheme =>
+      _cachedFontTheme ?? ref.read(fontThemeProvider);
 
   // Reader State
   Book? _readingBook;
@@ -72,11 +80,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  // Theme Accessor
-  ColorThemeModel get _theme =>
-      ColorThemes.getTheme(_currentColorTheme, _darkMode);
-
-  FontThemeModel get _fontTheme => FontThemes.all[_currentFontTheme]!;
+  // Deprecated Accessors removed
 
   List<Book> _getRecentlyOpenedBooks(List<Book> books, {int limit = 8}) {
     final recent =
@@ -139,8 +143,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     super.dispose();
   }
 
-  // Update Windows title bar color based on dark mode
   Future<void> _updateWindowTitleBar() async {
+    // Ensure Ref is ready
+    await Future.delayed(Duration.zero);
+
     if (Platform.isWindows) {
       try {
         // Set window background color based on dark mode
@@ -149,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
         // Update window title bar color (if supported)
         await windowManager.setTitleBarStyle(
-          _darkMode ? TitleBarStyle.normal : TitleBarStyle.normal,
+          _darkMode ? TitleBarStyle.hidden : TitleBarStyle.hidden,
         );
       } catch (e) {
         // Window manager operations may not be supported on all platforms
@@ -160,206 +166,311 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Update caches for this build
+    _cachedTheme = ref.watch(colorThemeProvider);
+    _cachedFontTheme = ref.watch(fontThemeProvider);
+
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: _darkMode ? const Color(0xFF090F15) : _theme.background,
-      endDrawer: _buildSettingsDrawer(),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Main Content
-            Column(
-              children: [
-                _buildHeader(),
-                Expanded(
-                  child: _activeTab == 1
-                      ? _buildLibraryTab()
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 0,
-                          ),
-                          child: Column(
+      backgroundColor: _darkMode
+          ? const Color(0xFF090F15)
+          : Colors.transparent, // Transparent for sidebar blur
+      // endDrawer: _buildSettingsDrawer(), // Removed old drawer
+      body: Stack(
+        // Root Stack for overlays (Profile, Reader)
+        children: [
+          // BACKGROUND LAYER
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    _theme.background,
+                    Color.alphaBlend(
+                      _theme.accentBg.withValues(alpha: 0.05),
+                      _theme.background,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // MAIN LAYOUT: Sidebar + Content
+          Row(
+            children: [
+              // 1. SIDEBAR
+              MacOSSidebar(
+                activeIndex: _activeTab,
+                onItemSelected: (index) => setState(() => _activeTab = index),
+                isExpanded: _isSidebarExpanded,
+                onToggleExpanded: () =>
+                    setState(() => _isSidebarExpanded = !_isSidebarExpanded),
+                isDarkMode: _darkMode,
+                activeColor: const Color(0xFF043222), // Deep Green from theme
+                backgroundColor: _theme.background.withOpacity(
+                  0.9,
+                ), // Glass effect
+                fontFamily: _fontTheme.sansFont,
+                items: [
+                  MacOSSidebarItem(
+                    icon: LucideIcons.home,
+                    label: AppLocalizations.of(context)!.home,
+                  ),
+                  MacOSSidebarItem(
+                    icon: LucideIcons.library,
+                    label: AppLocalizations.of(context)!.library,
+                  ),
+                  MacOSSidebarItem(
+                    icon: LucideIcons.barChart2,
+                    label: AppLocalizations.of(context)!.stats,
+                  ),
+                  MacOSSidebarItem(
+                    icon: LucideIcons.bookmark,
+                    label: AppLocalizations.of(context)!.saved,
+                  ),
+                  MacOSSidebarItem(
+                    icon: LucideIcons.settings,
+                    label: 'Cài đặt',
+                  ),
+                ],
+              ),
+
+              // 2. MAIN CONTENT AREA
+              Expanded(
+                child: Column(
+                  children: [
+                    // Drag Region for Window Move (Top Bar)
+                    GestureDetector(
+                      onPanStart: (details) => windowManager.startDragging(),
+                      child: Container(
+                        height: 28, // Height of standard macOS utility bar
+                        color: Colors.transparent,
+                      ),
+                    ),
+
+                    // Content
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          Column(
                             children: [
-                              if (_activeTab == 0) _buildHomeTab(),
-                              if (_activeTab == 2) _buildStatsTab(),
-                              if (_activeTab == 3) _buildSavedTab(),
-                              const SizedBox(
-                                height: 100,
-                              ), // Space for floating nav
+                              _buildHeader(),
+                              Expanded(
+                                child: _activeTab == 1
+                                    ? _buildLibraryTab()
+                                    : SingleChildScrollView(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 32,
+                                          vertical: 0,
+                                        ),
+                                        child: Column(
+                                          children: [
+                                            if (_activeTab == 0)
+                                              _buildHomeTab(),
+                                            if (_activeTab == 2)
+                                              _buildStatsTab(),
+
+                                            if (_activeTab == 3)
+                                              _buildSavedTab(),
+                                            if (_activeTab == 4)
+                                              const SettingsScreen(),
+                                            const SizedBox(height: 32),
+                                          ],
+                                        ),
+                                      ),
+                              ),
                             ],
                           ),
-                        ),
+
+                          // Notifications Overlay (scoped to content)
+                          if (_showNotifications) _buildNotificationsOverlay(),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
+            ],
+          ),
+
+          // OVERLAYS (Z-Index High)
+
+          // Profile menu backdrop
+          if (_showProfileMenu)
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => setState(() => _showProfileMenu = false),
+                child: const SizedBox(),
+              ),
             ),
 
-            // Floating Bottom Navigation
-            _buildFloatingNav(),
+          // Profile Menu
+          if (_showProfileMenu) _buildProfileMenu(),
 
-            // Notifications Overlay
-            if (_showNotifications) _buildNotificationsOverlay(),
-
-            // Profile menu backdrop (dismiss when tapping outside)
-            if (_showProfileMenu)
-              Positioned.fill(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.translucent,
-                  onTap: () => setState(() => _showProfileMenu = false),
-                  child: const SizedBox(),
-                ),
-              ),
-
-            // Profile Menu
-            _buildProfileMenu(),
-
-            // Reader Interface Overlay
-            if (_readingBook != null)
-              ReaderInterface(
-                book: _readingBook!.toJson(),
-                chapters: _readingChapters,
-                initialChapterIndex: 0,
-                onClose: () => setState(() => _readingBook = null),
-              ),
-          ],
-        ),
+          // Reader Interface Overlay (Full Screen)
+          if (_readingBook != null)
+            ReaderInterface(
+              book: _readingBook!.toJson(),
+              chapters: _readingChapters,
+              initialChapterIndex: 0,
+              onClose: () => setState(() => _readingBook = null),
+            ),
+        ],
       ),
     );
   }
 
   // === HEADER ===
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      decoration: BoxDecoration(
-        color: _theme.background.withValues(alpha: 0.8),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Logo & Greeting
-          Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: _theme.textColor,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Center(
-                  child: Text(
-                    'F',
-                    style: TextStyle(fontFamily: _fontTheme.serifFont,
-                      color: _theme.cardBackground,
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          decoration: BoxDecoration(
+            color: _theme.background.withOpacity(0.7),
+            border: Border(
+              bottom: BorderSide(
+                color: _theme.textColor.withValues(alpha: 0.5),
+                width: 0.5,
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Logo & Greeting
+              Row(
                 children: [
-                  Text(
-                    AppLocalizations.of(context)!.greeting,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                      fontSize: 10,
-                      color: _theme.textLight,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 1.5,
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _theme.textColor,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'F',
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
+                          color: _theme.cardBackground,
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                  Text(
-                    'Minh Nhật',
-                    style: TextStyle(fontFamily: _fontTheme.serifFont,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: _theme.textColor,
-                    ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        AppLocalizations.of(context)!.greeting,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
+                          fontSize: 10,
+                          color: _theme.textLight,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                      Text(
+                        'Minh Nhật',
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: _theme.textColor,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
-          ),
 
-          // Actions
-          Row(
-            children: [
-              // Notifications Bell
-              Stack(
+              // Actions
+              Row(
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      setState(() {
-                        _showNotifications = !_showNotifications;
-                      });
-                    },
-                    icon: Icon(
-                      LucideIcons.bell,
-                      color: _showNotifications
-                          ? Colors.white
-                          : _theme.textColor,
-                    ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: _showNotifications
-                          ? _theme.textColor
-                          : Colors.transparent,
-                    ),
+                  // Notifications Bell
+                  Stack(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          setState(() {
+                            _showNotifications = !_showNotifications;
+                          });
+                        },
+                        icon: Icon(
+                          LucideIcons.bell,
+                          color: _showNotifications
+                              ? Colors.white
+                              : _theme.textColor,
+                        ),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _showNotifications
+                              ? _theme.textColor
+                              : Colors.transparent,
+                        ),
+                      ),
+                      if (!_showNotifications)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _theme.highlight,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: _theme.background,
+                                width: 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  if (!_showNotifications)
-                    Positioned(
-                      top: 8,
-                      right: 8,
+
+                  // Profile Avatar
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        setState(() {
+                          _showProfileMenu = !_showProfileMenu;
+                        });
+                      },
+                      borderRadius: BorderRadius.circular(20),
                       child: Container(
-                        width: 8,
-                        height: 8,
+                        width: 40,
+                        height: 40,
                         decoration: BoxDecoration(
-                          color: _theme.highlight,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: _theme.background,
+                            color: _theme.cardBackground,
                             width: 2,
+                          ),
+                          image: const DecorationImage(
+                            image: NetworkImage(
+                              'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+                            ),
+                            fit: BoxFit.cover,
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
-
-              // Profile Avatar
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      _showProfileMenu = !_showProfileMenu;
-                    });
-                  },
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: _theme.cardBackground,
-                        width: 2,
-                      ),
-                      image: const DecorationImage(
-                        image: NetworkImage(
-                          'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
-                        ),
-                        fit: BoxFit.cover,
-                      ),
-                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -486,7 +597,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 10,
                     color: _theme.textLight,
                   ),
@@ -494,7 +606,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -516,9 +629,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          // TODO: Implement add goal functionality
-        },
+        onTap: () => _showAddGoalModal(context),
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.all(16),
@@ -549,7 +660,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Expanded(
                 child: Text(
                   AppLocalizations.of(context)!.add_goal,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -559,6 +671,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  void _showAddGoalModal(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AddGoalModal(
+        theme: _theme,
+        fontTheme: _fontTheme,
+        isDarkMode: _darkMode,
       ),
     );
   }
@@ -580,7 +703,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               RichText(
                 text: TextSpan(
-                  style: TextStyle(fontFamily: _fontTheme.serifFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.serifFont,
                     fontSize: 48,
                     height: 1.2,
                     color: _theme.textColor,
@@ -596,7 +720,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 24),
               Text(
                 subtitle,
-                style: TextStyle(fontFamily: _fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.sansFont,
                   fontSize: 16,
                   color: _theme.textLight,
                   height: 1.6,
@@ -736,7 +861,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         displayAuthor,
-                        style: TextStyle(fontFamily: _fontTheme.serifFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
                           color: Colors.white70,
                           fontSize: 12,
                           fontStyle: FontStyle.italic,
@@ -745,7 +871,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 6),
                       Text(
                         displayTitle,
-                        style: TextStyle(fontFamily: _fontTheme.serifFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -780,7 +907,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           children: [
                             Text(
                               AppLocalizations.of(context)!.progress,
-                              style: TextStyle(fontFamily: _fontTheme.sansFont,
+                              style: TextStyle(
+                                fontFamily: _fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -788,7 +916,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                             Text(
                               progressText,
-                              style: TextStyle(fontFamily: _fontTheme.sansFont,
+                              style: TextStyle(
+                                fontFamily: _fontTheme.sansFont,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 color: overlayPrimary,
@@ -813,7 +942,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 6),
                         Text(
                           lastReadText,
-                          style: TextStyle(fontFamily: _fontTheme.sansFont,
+                          style: TextStyle(
+                            fontFamily: _fontTheme.sansFont,
                             fontSize: 10,
                             color: overlaySecondary,
                           ),
@@ -894,7 +1024,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.recently_read,
-                  style: TextStyle(fontFamily: _fontTheme.serifFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.serifFont,
                     fontSize: 32,
                     fontWeight: FontWeight.w600,
                     color: _theme.textColor,
@@ -903,7 +1034,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   AppLocalizations.of(context)!.continue_journey,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     color: _theme.textLight,
                   ),
@@ -999,7 +1131,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         book.title,
-                        style: TextStyle(fontFamily: _fontTheme.serifFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
                           color: Colors.white,
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -1010,7 +1143,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         book.author,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           color: Colors.white70,
                           fontSize: 12,
                         ),
@@ -1074,7 +1208,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 8),
                   Text(
                     AppLocalizations.of(context)!.explore_more,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                       color: _theme.textColor.withValues(alpha: 0.5),
@@ -1083,7 +1218,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     AppLocalizations.of(context)!.open_library,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.sansFont,
                       fontSize: 10,
                       color: _theme.textColor.withValues(alpha: 0.3),
                     ),
@@ -1137,7 +1273,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 AppLocalizations.of(context)!.reading_schedule,
-                style: TextStyle(fontFamily: _fontTheme.serifFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -1164,7 +1301,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       days[index],
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 10,
                         fontWeight: FontWeight.w500,
                         color: isActive
@@ -1175,7 +1313,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 8),
                     Text(
                       '${11 + index}',
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         color: isActive ? _theme.cardBackground : textColor,
@@ -1227,7 +1366,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.todays_goal,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontWeight: FontWeight.bold,
                           color: textColor,
                         ),
@@ -1235,7 +1375,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         AppLocalizations.of(context)!.goal_msg,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           color: _theme.textLight,
                           height: 1.4,
@@ -1275,7 +1416,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 AppLocalizations.of(context)!.notes_highlight,
-                style: TextStyle(fontFamily: _fontTheme.serifFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.serifFont,
                   fontSize: 24,
                   fontWeight: FontWeight.w600,
                   color: textColor,
@@ -1322,7 +1464,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Text(
                     AppLocalizations.of(context)!.stats,
-                    style: TextStyle(fontFamily: _fontTheme.serifFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.serifFont,
                       fontSize: 32,
                       fontWeight: FontWeight.w600,
                       color: textColor,
@@ -1331,7 +1474,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   const SizedBox(height: 4),
                   Text(
                     AppLocalizations.of(context)!.reading_habit,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.sansFont,
                       fontSize: 14,
                       color: _theme.textLight,
                     ),
@@ -1427,7 +1571,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       AppLocalizations.of(context)!.activity_week,
-                      style: TextStyle(fontFamily: _fontTheme.serifFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.serifFont,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: textColor,
@@ -1444,7 +1589,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       child: Text(
                         AppLocalizations.of(context)!.this_week,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
                           color: _theme.textLight,
@@ -1456,7 +1602,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 8),
                 Text(
                   'Tổng: ${_statsService.weeklyTotalMinutes ~/ 60}h ${_statsService.weeklyTotalMinutes % 60} phút đọc',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 13,
                     color: _theme.textLight,
                   ),
@@ -1515,7 +1662,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   AppLocalizations.of(context)!.achievements,
-                  style: TextStyle(fontFamily: _fontTheme.serifFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.serifFont,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: textColor,
@@ -1595,7 +1743,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     'HOT',
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.sansFont,
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.yellow[800],
@@ -1609,7 +1758,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 value,
-                style: TextStyle(fontFamily: _fontTheme.serifFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.serifFont,
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1618,7 +1768,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 4),
               Text(
                 label.toUpperCase(),
-                style: TextStyle(fontFamily: _fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.sansFont,
                   fontSize: 10,
                   fontWeight: FontWeight.w500,
                   color: _theme.textLight,
@@ -1662,7 +1813,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 8),
           Text(
             day,
-            style: TextStyle(fontFamily: _fontTheme.sansFont,
+            style: TextStyle(
+              fontFamily: _fontTheme.sansFont,
               fontSize: 12,
               fontWeight: FontWeight.w500,
               color: _theme.textLight,
@@ -1708,7 +1860,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 title,
-                style: TextStyle(fontFamily: _fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.sansFont,
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1717,7 +1870,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 4),
               Text(
                 description,
-                style: TextStyle(fontFamily: _fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.sansFont,
                   fontSize: 12,
                   color: _theme.textLight,
                 ),
@@ -1744,7 +1898,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         const SizedBox(width: 16),
         Text(
           '$currentValue/$targetValue',
-          style: TextStyle(fontFamily: _fontTheme.sansFont,
+          style: TextStyle(
+            fontFamily: _fontTheme.sansFont,
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: isCompleted ? _theme.highlight : _theme.textLight,
@@ -1784,7 +1939,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               children: [
                 Text(
                   'Hôm nay',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: Colors.white.withValues(alpha: 0.7),
@@ -1797,7 +1953,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       _statsService.getFormattedTodayTime(),
-                      style: TextStyle(fontFamily: _fontTheme.serifFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.serifFont,
                         fontSize: 48,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1809,7 +1966,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.only(bottom: 8),
                       child: Text(
                         _statsService.todayReadingMinutes >= 60 ? '' : 'phút',
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 16,
                           color: Colors.white.withValues(alpha: 0.8),
                         ),
@@ -1837,7 +1995,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 12),
                     Text(
                       '${(_statsService.dailyProgress * 100).clamp(0, 100).toInt()}%',
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1850,7 +2009,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _statsService.dailyProgress >= 1.0
                       ? '🎉 Đã đạt mục tiêu ${_statsService.dailyGoalMinutes} phút/ngày!'
                       : 'Còn ${_statsService.getRemainingMinutesToGoal()} phút nữa để đạt mục tiêu ${_statsService.dailyGoalMinutes} phút/ngày',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     color: Colors.white.withValues(alpha: 0.7),
                   ),
@@ -1891,7 +2051,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: 4),
                     Text(
                       '${_statsService.todayReadingMinutes}/${_statsService.dailyGoalMinutes}',
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -1927,7 +2088,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Text(
                 'Mục tiêu tháng này',
-                style: TextStyle(fontFamily: _fontTheme.serifFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.serifFont,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: textColor,
@@ -1944,7 +2106,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
                 child: Text(
                   'Tháng ${DateTime.now().month}',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: _theme.highlight,
@@ -2015,7 +2178,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: TextStyle(fontFamily: _fontTheme.serifFont,
+            style: TextStyle(
+              fontFamily: _fontTheme.serifFont,
               fontSize: 20,
               fontWeight: FontWeight.bold,
               color: textColor,
@@ -2024,7 +2188,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           const SizedBox(height: 4),
           Text(
             label,
-            style: TextStyle(fontFamily: _fontTheme.sansFont,
+            style: TextStyle(
+              fontFamily: _fontTheme.sansFont,
               fontSize: 12,
               color: _theme.textLight,
             ),
@@ -2091,7 +2256,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         AppLocalizations.of(context)!.saved,
-                        style: TextStyle(fontFamily: _fontTheme.serifFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
                           fontSize: 32,
                           fontWeight: FontWeight.w600,
                           color: textColor,
@@ -2100,7 +2266,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '$totalSaved mục đã lưu',
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 14,
                           color: _theme.textLight,
                         ),
@@ -2216,7 +2383,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(width: 8),
               Text(
                 label,
-                style: TextStyle(fontFamily: _fontTheme.sansFont,
+                style: TextStyle(
+                  fontFamily: _fontTheme.sansFont,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
                   color: isSelected
@@ -2254,7 +2422,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Text(
             message,
             textAlign: TextAlign.center,
-            style: TextStyle(fontFamily: _fontTheme.sansFont,
+            style: TextStyle(
+              fontFamily: _fontTheme.sansFont,
               fontSize: 14,
               color: textColor,
               fontWeight: FontWeight.w600,
@@ -2287,7 +2456,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Đánh dấu trang',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2327,7 +2497,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Text(
                         bookmark.bookTitle,
-                        style: TextStyle(fontFamily: _fontTheme.serifFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.serifFont,
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: textColor,
@@ -2336,7 +2507,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       const SizedBox(height: 4),
                       Text(
                         '${bookmark.chapterLabel} • ${bookmark.formattedProgress}',
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 12,
                           color: _theme.textLight,
                         ),
@@ -2349,7 +2521,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Text(
                       _formatSavedDate(bookmark.createdAt),
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2397,7 +2570,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Highlight',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2431,7 +2605,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       highlight.bookTitle,
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _theme.textLight,
@@ -2441,7 +2616,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const Spacer(),
                     Text(
                       _formatSavedDate(highlight.createdAt),
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2460,7 +2636,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   child: Text(
                     '"${highlight.selectedText}"',
-                    style: TextStyle(fontFamily: _fontTheme.serifFont,
+                    style: TextStyle(
+                      fontFamily: _fontTheme.serifFont,
                       fontSize: 14,
                       fontStyle: FontStyle.italic,
                       color: textColor,
@@ -2499,7 +2676,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(width: 8),
                 Text(
                   'Ghi chú',
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: _theme.textLight,
@@ -2530,7 +2708,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(width: 8),
                     Text(
                       note.bookTitle,
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: _theme.textLight,
@@ -2540,7 +2719,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const Spacer(),
                     Text(
                       _formatSavedDate(note.createdAt),
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
+                      style: TextStyle(
+                        fontFamily: _fontTheme.sansFont,
                         fontSize: 11,
                         color: _theme.textLight,
                       ),
@@ -2550,7 +2730,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 12),
                 Text(
                   '"${note.selectedText}"',
-                  style: TextStyle(fontFamily: _fontTheme.serifFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.serifFont,
                     fontSize: 13,
                     fontStyle: FontStyle.italic,
                     color: _theme.textLight,
@@ -2579,7 +2760,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       Expanded(
                         child: Text(
                           note.content,
-                          style: TextStyle(fontFamily: _fontTheme.sansFont,
+                          style: TextStyle(
+                            fontFamily: _fontTheme.sansFont,
                             fontSize: 13,
                             color: textColor,
                             height: 1.4,
@@ -2608,128 +2790,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (diff.inDays < 7) return '${diff.inDays} ngày trước';
 
     return '${date.day}/${date.month}/${date.year}';
-  }
-
-  // === FLOATING BOTTOM NAVIGATION ===
-  Widget _buildFloatingNav() {
-    return Positioned(
-      bottom: 24,
-      left: 0,
-      right: 0,
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _darkMode
-                ? const Color(0xFFE3DAC9).withValues(alpha: 0.95)
-                : _theme.textColor.withValues(alpha: 0.95),
-            borderRadius: BorderRadius.circular(50),
-            border: Border.all(
-              color: _darkMode
-                  ? Colors.white.withValues(alpha: 0.1)
-                  : const Color(0xFF4A635D).withValues(alpha: 0.3),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildNavItem(
-                0,
-                LucideIcons.home,
-                AppLocalizations.of(context)!.home,
-              ),
-              _buildNavItem(
-                1,
-                LucideIcons.book,
-                AppLocalizations.of(context)!.library,
-              ),
-              _buildNavItem(
-                2,
-                LucideIcons.barChart2,
-                AppLocalizations.of(context)!.stats,
-              ),
-              _buildNavItem(
-                3,
-                LucideIcons.bookmark,
-                AppLocalizations.of(context)!.saved,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNavItem(int index, IconData icon, String label) {
-    final isActive = _activeTab == index;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _activeTab = index;
-            });
-          },
-          borderRadius: BorderRadius.circular(30),
-          child: Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: isActive ? 20 : 16,
-              vertical: 12,
-            ),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? (_darkMode
-                        ? Colors.black.withValues(alpha: 0.1)
-                        : Colors.white.withValues(alpha: 0.15))
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  icon,
-                  size: 22,
-                  color: isActive
-                      ? (_darkMode ? Colors.black : Colors.white)
-                      : (_darkMode
-                            ? Colors.black.withValues(alpha: 0.5)
-                            : _theme.cardBackground.withValues(alpha: 0.6)),
-                ),
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  width: isActive ? 8 : 0,
-                ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  child: isActive
-                      ? Text(
-                          label,
-                          style: TextStyle(fontFamily: _fontTheme.sansFont,
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: _darkMode ? Colors.black : Colors.white,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
   }
 
   // === NOTIFICATIONS OVERLAY ===
@@ -2772,7 +2832,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           Text(
                             AppLocalizations.of(context)!.notifications,
-                            style: TextStyle(fontFamily: _fontTheme.serifFont,
+                            style: TextStyle(
+                              fontFamily: _fontTheme.serifFont,
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
                               color: _theme.textColor,
@@ -2866,7 +2927,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Expanded(
                       child: Text(
                         title,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
+                        style: TextStyle(
+                          fontFamily: _fontTheme.sansFont,
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: _theme.textColor,
@@ -2887,7 +2949,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 12,
                     color: _theme.textLight,
                     height: 1.4,
@@ -2896,7 +2959,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 const SizedBox(height: 4),
                 Text(
                   time,
-                  style: TextStyle(fontFamily: _fontTheme.sansFont,
+                  style: TextStyle(
+                    fontFamily: _fontTheme.sansFont,
                     fontSize: 10,
                     color: _theme.textLight.withValues(alpha: 0.6),
                   ),
@@ -2906,764 +2970,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-    );
-  }
-
-  // === SETTINGS DRAWER ===
-  Widget _buildSettingsDrawer() {
-    final drawerBg = _darkMode ? const Color(0xFF131B24) : Colors.white;
-    final borderColor = _darkMode ? const Color(0xFF2D3748) : Colors.grey[200]!;
-    final textColor = _darkMode ? Colors.white : Colors.grey[800]!;
-    final textLight = _darkMode ? Colors.grey[400]! : Colors.grey[600]!;
-    final cardBg = _darkMode ? const Color(0xFF1E293B) : Colors.grey[50]!;
-
-    return Container(
-      width: 320,
-      color: drawerBg,
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                border: Border(bottom: BorderSide(color: borderColor)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Icon(LucideIcons.settings, size: 20, color: textColor),
-                      const SizedBox(width: 8),
-                      Text(
-                        AppLocalizations.of(context)!.settings,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: textColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: Icon(LucideIcons.x, size: 20, color: textColor),
-                    style: IconButton.styleFrom(
-                      backgroundColor: _darkMode
-                          ? const Color(0xFF1E293B)
-                          : Colors.grey[100],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Content
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  // Section: Dark Mode
-                  Row(
-                    children: [
-                      Icon(LucideIcons.moon, size: 14, color: textLight),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppLocalizations.of(context)!.dark_mode,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _buildToggleRow(
-                    AppLocalizations.of(context)!.enable_dark_mode,
-                    _darkMode,
-                    (value) {
-                      setState(() => _darkMode = value);
-                      _updateWindowTitleBar();
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildToggleRow(
-                    AppLocalizations.of(context)!.auto_schedule,
-                    _scheduleDarkMode,
-                    (value) => setState(() => _scheduleDarkMode = value),
-                  ),
-                  if (_scheduleDarkMode) ...[
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!.turn_on_at,
-                                style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: textLight,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              InkWell(
-                                onTap: () async {
-                                  final time = await showTimePicker(
-                                    context: context,
-                                    initialTime: _darkModeStartTime,
-                                  );
-                                  if (time != null) {
-                                    setState(() => _darkModeStartTime = time);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: cardBg,
-                                    border: Border.all(color: borderColor),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    _darkModeStartTime.format(context),
-                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                      fontSize: 14,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                AppLocalizations.of(context)!.turn_off_at,
-                                style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: textLight,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              InkWell(
-                                onTap: () async {
-                                  final time = await showTimePicker(
-                                    context: context,
-                                    initialTime: _darkModeEndTime,
-                                  );
-                                  if (time != null) {
-                                    setState(() => _darkModeEndTime = time);
-                                  }
-                                },
-                                borderRadius: BorderRadius.circular(8),
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: cardBg,
-                                    border: Border.all(color: borderColor),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    _darkModeEndTime.format(context),
-                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                      fontSize: 14,
-                                      color: textColor,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-
-                  const SizedBox(height: 32),
-
-                  // Section: Language
-                  Row(
-                    children: [
-                      Icon(LucideIcons.globe, size: 14, color: textLight),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppLocalizations.of(context)!.language,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            ref
-                                .read(languageProvider.notifier)
-                                .setLocale(const Locale('vi'));
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppLocalizations.of(
-                                        context,
-                                      )!.locale.languageCode ==
-                                      'vi'
-                                  ? cardBg
-                                  : Colors.transparent,
-                              border: Border.all(
-                                color:
-                                    AppLocalizations.of(
-                                          context,
-                                        )!.locale.languageCode ==
-                                        'vi'
-                                    ? (_darkMode
-                                          ? Colors.white
-                                          : Colors.grey[400]!)
-                                    : borderColor,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppLocalizations.of(context)!.vietnamese,
-                                style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: InkWell(
-                          onTap: () {
-                            ref
-                                .read(languageProvider.notifier)
-                                .setLocale(const Locale('en'));
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color:
-                                  AppLocalizations.of(
-                                        context,
-                                      )!.locale.languageCode ==
-                                      'en'
-                                  ? cardBg
-                                  : Colors.transparent,
-                              border: Border.all(
-                                color:
-                                    AppLocalizations.of(
-                                          context,
-                                        )!.locale.languageCode ==
-                                        'en'
-                                    ? (_darkMode
-                                          ? Colors.white
-                                          : Colors.grey[400]!)
-                                    : borderColor,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Center(
-                              child: Text(
-                                AppLocalizations.of(context)!.english,
-                                style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                  color: textColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-
-                  // Section: Appearance
-                  Row(
-                    children: [
-                      Icon(LucideIcons.palette, size: 14, color: textLight),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppLocalizations.of(context)!.appearance,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Color Theme Selector
-                  Text(
-                    AppLocalizations.of(context)!.main_color,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Opacity(
-                    opacity: _darkMode ? 0.5 : 1.0,
-                    child: GridView.count(
-                      crossAxisCount: 2,
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      mainAxisSpacing: 12,
-                      crossAxisSpacing: 12,
-                      childAspectRatio: 2.5,
-                      children: ColorThemes.themeNames.entries.map((entry) {
-                        final themeId = entry.key;
-                        // final themeName = entry.value; // Unused
-                        final theme = ColorThemes.getTheme(themeId, _darkMode);
-                        final isSelected =
-                            !_darkMode && _currentColorTheme == themeId;
-
-                        String localizedName;
-                        switch (themeId) {
-                          case 'forest':
-                            localizedName = AppLocalizations.of(
-                              context,
-                            )!.theme_forest;
-                            break;
-                          case 'charcoal':
-                            localizedName = AppLocalizations.of(
-                              context,
-                            )!.theme_charcoal;
-                            break;
-                          case 'espresso':
-                            localizedName = AppLocalizations.of(
-                              context,
-                            )!.theme_espresso;
-                            break;
-                          case 'ink':
-                            localizedName = AppLocalizations.of(
-                              context,
-                            )!.theme_ink;
-                            break;
-                          default:
-                            localizedName = theme.name;
-                        }
-
-                        return InkWell(
-                          onTap: _darkMode
-                              ? null
-                              : () => setState(
-                                  () => _currentColorTheme = themeId,
-                                ),
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: isSelected ? cardBg : Colors.transparent,
-                              border: Border.all(
-                                color: isSelected
-                                    ? (_darkMode
-                                          ? Colors.white
-                                          : Colors.grey[400]!)
-                                    : borderColor,
-                                width: isSelected ? 2 : 1,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 24,
-                                  height: 24,
-                                  decoration: BoxDecoration(
-                                    color: theme.accentBg,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _darkMode
-                                          ? Colors.grey[600]!
-                                          : Colors.grey[300]!,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    localizedName,
-                                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: textColor,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Font Theme Selector
-                  Text(
-                    AppLocalizations.of(context)!.font_style,
-                    style: TextStyle(fontFamily: _fontTheme.sansFont,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: textColor,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  ...FontThemes.all.entries.map((entry) {
-                    final theme = entry.value;
-                    final isSelected = _currentFontTheme == theme.id;
-
-                    String localizedName;
-                    String localizedDesc;
-                    switch (theme.id) {
-                      case 'default':
-                        localizedName = AppLocalizations.of(
-                          context,
-                        )!.font_default;
-                        localizedDesc = AppLocalizations.of(
-                          context,
-                        )!.desc_font_default;
-                        break;
-                      case 'contemporary':
-                        localizedName = AppLocalizations.of(
-                          context,
-                        )!.font_contemporary;
-                        localizedDesc = AppLocalizations.of(
-                          context,
-                        )!.desc_font_contemporary;
-                        break;
-                      case 'vintage':
-                        localizedName = AppLocalizations.of(
-                          context,
-                        )!.font_vintage;
-                        localizedDesc = AppLocalizations.of(
-                          context,
-                        )!.desc_font_vintage;
-                        break;
-                      case 'academic':
-                        localizedName = AppLocalizations.of(
-                          context,
-                        )!.font_academic;
-                        localizedDesc = AppLocalizations.of(
-                          context,
-                        )!.desc_font_academic;
-                        break;
-                      case 'bold':
-                        localizedName = AppLocalizations.of(context)!.font_bold;
-                        localizedDesc = AppLocalizations.of(
-                          context,
-                        )!.desc_font_bold;
-                        break;
-                      default:
-                        localizedName = theme.name;
-                        localizedDesc = theme.description;
-                    }
-
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: InkWell(
-                        onTap: () =>
-                            setState(() => _currentFontTheme = theme.id),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isSelected ? cardBg : Colors.transparent,
-                            border: Border.all(
-                              color: isSelected
-                                  ? (_darkMode
-                                        ? Colors.white
-                                        : Colors.grey[400]!)
-                                  : borderColor,
-                              width: isSelected ? 2 : 1,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      localizedName,
-                                      style: TextStyle(fontFamily: theme.serifFont,
-                                        fontSize: 14,
-                                        color: textColor,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      localizedDesc,
-                                      style: TextStyle(fontFamily: theme.sansFont,
-                                        fontSize: 10,
-                                        color: textLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (isSelected)
-                                Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-
-                  const SizedBox(height: 32),
-
-                  // Section: Storage
-                  Row(
-                    children: [
-                      Icon(LucideIcons.folder, size: 14, color: textLight),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Lưu trữ',
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      border: Border.all(color: borderColor),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Current Location Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Vị trí hiện tại',
-                              style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: textLight,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          StorageService().rootLibraryPath ??
-                              'Chưa được thiết lập',
-                          style: TextStyle(fontFamily: _fontTheme.sansFont,
-                            fontSize: 12,
-                            color: textColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 16),
-                        // Change Folder Button
-                        InkWell(
-                          onTap: () {
-                            Navigator.pop(context); // Close drawer
-                            _showChangeLibraryConfirmation(context);
-                          },
-                          borderRadius: BorderRadius.circular(8),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              vertical: 12,
-                              horizontal: 16,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _theme.accentBg.withValues(alpha: 0.1),
-                              border: Border.all(
-                                color: _theme.accentBg,
-                                width: 1,
-                              ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  LucideIcons.folderOpen,
-                                  size: 16,
-                                  color: _theme.accentBg,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Thay đổi thư mục',
-                                  style: TextStyle(fontFamily: _fontTheme.sansFont,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                    color: _theme.accentBg,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Section: Account (Placeholder)
-                  Row(
-                    children: [
-                      Icon(LucideIcons.user, size: 14, color: textLight),
-                      const SizedBox(width: 6),
-                      Text(
-                        AppLocalizations.of(context)!.account,
-                        style: TextStyle(fontFamily: _fontTheme.sansFont,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: textLight,
-                          letterSpacing: 1.2,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      border: Border.all(color: borderColor),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.profile,
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: textColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      border: Border.all(color: borderColor),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.security,
-                      style: TextStyle(fontFamily: _fontTheme.sansFont,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: textColor.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildToggleRow(
-    String label,
-    bool value,
-    ValueChanged<bool> onChanged,
-  ) {
-    final textColor = _darkMode ? Colors.grey[300]! : Colors.grey[700]!;
-    final activeColor = _theme.accentBg;
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: TextStyle(fontFamily: _fontTheme.sansFont,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: textColor,
-          ),
-        ),
-        Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () => onChanged(!value),
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              width: 48,
-              height: 24,
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                color: value ? activeColor : Colors.grey[300],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: AnimatedAlign(
-                alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-                duration: const Duration(milliseconds: 200),
-                child: Container(
-                  width: 20,
-                  height: 20,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 
@@ -3733,7 +3039,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         children: [
                           Text(
                             'Minh Nhật',
-                            style: TextStyle(fontFamily: _fontTheme.sansFont,
+                            style: TextStyle(
+                              fontFamily: _fontTheme.sansFont,
                               fontSize: 14,
                               fontWeight: FontWeight.bold,
                               color: textColor,
@@ -3741,7 +3048,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           ),
                           Text(
                             'minhnhat@flux.io',
-                            style: TextStyle(fontFamily: _fontTheme.sansFont,
+                            style: TextStyle(
+                              fontFamily: _fontTheme.sansFont,
                               fontSize: 12,
                               color: _theme.textLight,
                             ),
@@ -3763,8 +3071,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 LucideIcons.settings,
                 AppLocalizations.of(context)!.settings,
                 () {
-                  setState(() => _showProfileMenu = false);
-                  _scaffoldKey.currentState?.openEndDrawer();
+                  setState(() {
+                    _showProfileMenu = false;
+                    _activeTab = 4; // Navigate to Settings Tab
+                  });
                 },
                 hoverColor,
                 textColor,
@@ -3812,7 +3122,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             const SizedBox(width: 12),
             Text(
               label,
-              style: TextStyle(fontFamily: _fontTheme.sansFont,
+              style: TextStyle(
+                fontFamily: _fontTheme.sansFont,
                 fontSize: 14,
                 color: textColor,
               ),
@@ -3822,100 +3133,4 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
     );
   }
-
-  // === CHANGE LIBRARY CONFIRMATION ===
-  void _showChangeLibraryConfirmation(BuildContext context) {
-    final drawerBg = _darkMode ? const Color(0xFF131B24) : Colors.white;
-    final textColor = _darkMode ? Colors.white : Colors.grey[800]!;
-    final textLight = _darkMode ? Colors.grey[400]! : Colors.grey[600]!;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: drawerBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(
-          'Xác nhận thay đổi',
-          style: TextStyle(fontFamily: _fontTheme.serifFont,
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: textColor,
-          ),
-        ),
-        content: Text(
-          'Bạn có chắc muốn đổi thư mục không? App sẽ khởi động lại quy trình chọn thư mục.',
-          style: TextStyle(fontFamily: _fontTheme.sansFont,
-            fontSize: 14,
-            color: textColor,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text(
-              'Hủy',
-              style: TextStyle(fontFamily: _fontTheme.sansFont,
-                fontSize: 14,
-                color: textLight,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.of(context).pop(); // Close dialog
-              await _changeLibraryLocation();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _theme.textColor,
-              foregroundColor: _theme.cardBackground,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              'Xác nhận',
-              style: TextStyle(fontFamily: _fontTheme.sansFont,
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // === CHANGE LIBRARY LOCATION ===
-  Future<void> _changeLibraryLocation() async {
-    try {
-      // Clear the saved library path from SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('custom_library_path');
-
-      debugPrint('[Settings] Cleared library path from SharedPreferences');
-
-      // Navigate to WelcomeScreen and remove all previous routes
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      debugPrint('[Settings] Error changing library location: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Lỗi khi thay đổi thư mục: $e',
-              style: TextStyle(fontFamily: _fontTheme.sansFont, fontSize: 14),
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
 }
-
-
